@@ -1,26 +1,64 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="panel">
-  <div class="header-row">
-    <div>
-      <h1>Live Interview</h1>
-      <p class="muted">{{ interview.candidate.name }} · {{ interview.candidate.role }}</p>
-    </div>
-    <div class="status-block">
-      <div class="badge">Status: {{ interview.status|capitalize }}</div>
-      <div id="live-timer" class="timer" data-started="{{ interview.created_at.isoformat() }}Z" data-ended="{{ interview.ended_at.isoformat() + 'Z' if interview.ended_at else '' }}">
-        00:00:00
+<section class="panel interview-header">
+  <div class="layout-c-container">
+    <!-- Row 1: Badge + Live Interview Title | Live Status + Timer -->
+    <div class="row-1">
+      <div class="left-side">
+        <div class="candidate-badge-compact">
+          <span class="candidate-initial-compact">{{ interview.candidate.name[0] }}</span>
+        </div>
+        <h1 class="live-title">Live Interview</h1>
       </div>
-      <form action="{{ url_for('main.end_interview', interview_id=interview.id) }}" method="post">
-        <button type="submit" class="secondary" {% if interview.status == 'completed' %}disabled{% endif %}>End Interview</button>
-      </form>
+      <div class="right-side">
+        <div class="status-timer-inline">
+          <div class="status-indicator {% if interview.status == 'ongoing' %}status-live{% else %}status-ended{% endif %}">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ 'Live' if interview.status == 'ongoing' else 'Completed' }}</span>
+          </div>
+          <div id="live-timer" class="timer" data-started="{{ interview.created_at.isoformat() }}Z" data-ended="{{ interview.ended_at.isoformat() + 'Z' if interview.ended_at else '' }}">
+            00:00:00
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Row 2: Candidate Name | End Interview Button -->
+    <div class="row-2">
+      <div class="left-side">
+        <h2 class="candidate-name-compact">{{ interview.candidate.name }}</h2>
+      </div>
+      <div class="right-side">
+        <form action="{{ url_for('main.end_interview', interview_id=interview.id) }}" method="post" class="end-interview-form-compact">
+          <button type="submit" class="btn-end-interview-compact" {% if interview.status == 'completed' %}disabled{% endif %}>End Interview</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Row 3: Candidate Details | Empty -->
+    <div class="row-3">
+      <div class="left-side">
+        <div class="candidate-meta-compact">
+          <span class="meta-badge">{{ interview.candidate.role }}</span>
+          <span class="meta-divider">•</span>
+          <span class="meta-text">{{ interview.candidate.branch }}</span>
+          <span class="meta-divider">•</span>
+          <span class="meta-text">{{ interview.candidate.degree }}</span>
+        </div>
+      </div>
+      <div class="right-side">
+        <!-- Empty -->
+      </div>
     </div>
   </div>
 </section>
 
 <section class="grid three">
-  <div class="panel">
-    <h2>Questions</h2>
+  <div class="panel questions-panel">
+    <div class="panel-header-simple">
+      <h2>Interview Questions</h2>
+      <p class="panel-description">Track questions and candidate responses</p>
+    </div>
     <div class="accordion">
       {% for skill, skill_questions in grouped_questions.items() %}
         <details>
@@ -30,26 +68,38 @@
           </summary>
           <ul class="question-list">
             {% for question in skill_questions %}
-              <li data-question-id="{{ question.id }}">
+              <li data-question-id="{{ question.id }}" class="question-item {% if question.asked %}question-asked{% endif %}">
+                <div class="question-header">
+                  <span class="pill pill-skill">{{ question.skill }}</span>
+                  {% if question.asked %}
+                    <span class="question-status-badge asked">✓ Asked</span>
+                  {% endif %}
+                  {% if question.rating %}
+                    <span class="question-rating-badge">★ {{ question.rating }}/5</span>
+                  {% endif %}
+                </div>
                 <div class="question-text">
-                  <span class="pill">{{ question.skill }}</span>
                   <p>{{ question.text }}</p>
                 </div>
                 <div class="question-actions">
-                  <label>
-                    <input type="checkbox" class="asked-toggle" {% if question.asked %}checked{% endif %} {% if interview.status == 'completed' %}disabled{% endif %} /> Asked
+                  <label class="checkbox-label">
+                    <input type="checkbox" class="asked-toggle" {% if question.asked %}checked{% endif %} {% if interview.status == 'completed' %}disabled{% endif %} />
+                    <span>Mark as Asked</span>
                   </label>
-                  <select class="rating-select" {% if interview.status == 'completed' %}disabled{% endif %}>
-                    <option value="">Rating</option>
-                    {% for rating in range(1, 6) %}
-                      <option value="{{ rating }}" {% if question.rating == rating %}selected{% endif %}>{{ rating }}</option>
-                    {% endfor %}
-                  </select>
+                  <div class="rating-wrapper">
+                    <label class="rating-label">Rating:</label>
+                    <select class="rating-select" {% if interview.status == 'completed' %}disabled{% endif %}>
+                      <option value="">Select</option>
+                      {% for rating in range(1, 6) %}
+                        <option value="{{ rating }}" {% if question.rating == rating %}selected{% endif %}>{{ rating }} Star{{ 's' if rating > 1 else '' }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
                 </div>
-                <label class="question-note">
-                  Interviewer note
-                  <textarea class="question-note-input" rows="2" {% if interview.status == 'completed' %}disabled{% endif %}>{{ question.note or '' }}</textarea>
-                </label>
+                <div class="question-note-section">
+                  <label class="note-label">Interviewer Notes:</label>
+                  <textarea class="question-note-input" rows="2" placeholder="Add observations about the candidate's response..." {% if interview.status == 'completed' %}disabled{% endif %}>{{ question.note or '' }}</textarea>
+                </div>
               </li>
             {% endfor %}
           </ul>
@@ -58,84 +108,123 @@
     </div>
   </div>
 
-  <div class="panel">
-    <h2>Notes</h2>
-    <form id="note-form" class="form compact">
+  <div class="panel notes-panel">
+    <div class="panel-header-simple">
+      <h2>Interview Notes</h2>
+      <p class="panel-description">Record observations during the interview</p>
+    </div>
+    <form id="note-form" class="form compact note-form">
+      <div class="form-row">
+        <label>
+          Skill Category
+          <select name="skill" id="note-skill-select" {% if interview.status == 'completed' %}disabled{% endif %}>
+            {% for skill in note_skills %}
+              <option value="{{ skill }}">{{ skill }}</option>
+            {% endfor %}
+            <option value="other">+ Add Custom</option>
+          </select>
+        </label>
+        <label id="custom-skill-field" class="hidden">
+          Custom Skill
+          <input type="text" name="custom_skill" id="custom-skill-input" placeholder="e.g. Problem Solving" {% if interview.status == 'completed' %}disabled{% endif %} />
+        </label>
+        <label>
+          Tag Type
+          <select name="tag" {% if interview.status == 'completed' %}disabled{% endif %}>
+            <option value="Strength">✓ Strength</option>
+            <option value="Weakness">⚠ Weakness</option>
+            <option value="Red Flag">✕ Red Flag</option>
+          </select>
+        </label>
+      </div>
       <label>
-        Skill
-        <select name="skill" id="note-skill-select" {% if interview.status == 'completed' %}disabled{% endif %}>
-          {% for skill in note_skills %}
-            <option value="{{ skill }}">{{ skill }}</option>
-          {% endfor %}
-          <option value="other">Other</option>
-        </select>
+        Note Content
+        <textarea name="text" rows="3" placeholder="Describe your observation..." required {% if interview.status == 'completed' %}disabled{% endif %}></textarea>
       </label>
-      <label id="custom-skill-field" class="hidden">
-        Custom skill
-        <input type="text" name="custom_skill" id="custom-skill-input" placeholder="e.g. Problem Solving" {% if interview.status == 'completed' %}disabled{% endif %} />
-      </label>
-      <label>
-        Tag
-        <select name="tag" {% if interview.status == 'completed' %}disabled{% endif %}>
-          <option value="Strength">Strength</option>
-          <option value="Weakness">Weakness</option>
-          <option value="Red Flag">Red Flag</option>
-        </select>
-      </label>
-      <label>
-        Note
-        <textarea name="text" rows="3" required {% if interview.status == 'completed' %}disabled{% endif %}></textarea>
-      </label>
-      <button type="submit" class="primary" {% if interview.status == 'completed' %}disabled{% endif %}>Add Note</button>
+      <button type="submit" class="primary btn-add-note" {% if interview.status == 'completed' %}disabled{% endif %}>
+        <span>+ Add Note</span>
+      </button>
     </form>
 
-    <div class="note-list" id="note-list">
-      {% for note in notes %}
-        <div class="note-card">
-          <div class="note-meta">
-            <span class="pill">{{ note.skill }}</span>
-            <span class="tag">{{ note.tag }}</span>
+    <div class="notes-container">
+      <div class="notes-header">
+        <h3>All Notes ({{ notes|length }})</h3>
+      </div>
+      <div class="note-list" id="note-list">
+        {% if notes %}
+          {% for note in notes %}
+            <div class="note-card note-{{ note.tag.lower().replace(' ', '-') }}">
+              <div class="note-header-card">
+                <div class="note-meta">
+                  <span class="pill pill-skill">{{ note.skill }}</span>
+                  <span class="tag tag-{{ note.tag.lower().replace(' ', '-') }}">{{ note.tag }}</span>
+                </div>
+                <span class="note-time">{{ note.timestamp.strftime('%H:%M') }}</span>
+              </div>
+              <p class="note-content">{{ note.text }}</p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="notes-empty">
+            <p>No notes yet</p>
+            <span>Add your first observation above</span>
           </div>
-          <p>{{ note.text }}</p>
-          <span class="muted">{{ note.timestamp.strftime('%H:%M') }}</span>
-        </div>
-      {% endfor %}
+        {% endif %}
+      </div>
     </div>
   </div>
 
-  <div class="panel">
-    <h2>Skill Scores</h2>
-    <table class="score-table">
-      <thead>
-        <tr>
-          <th>Skill</th>
-          <th>Score</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for score in scores %}
+  <div class="panel scores-panel">
+    <div class="panel-header-simple">
+      <h2>Skill Assessment</h2>
+      <p class="panel-description">Rate candidate performance by skill</p>
+    </div>
+    <div class="score-table-wrapper">
+      <table class="score-table">
+        <thead>
           <tr>
-            <td>{{ score.skill }}</td>
-            <td>
-              <select class="score-select" data-skill="{{ score.skill }}" {% if interview.status == 'completed' %}disabled{% endif %}>
-                {% for rating in range(1, 6) %}
-                  <option value="{{ rating }}" {% if score.value == rating %}selected{% endif %}>{{ rating }}</option>
-                {% endfor %}
-              </select>
-            </td>
+            <th>Skill Area</th>
+            <th>Rating</th>
+            <th>Visual</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <div class="actions">
-      <a class="primary" href="{{ url_for('main.summary', interview_id=interview.id) }}">Go to Summary</a>
-      <button id="generate-summary" class="secondary" type="button" {% if interview.status != 'completed' %}disabled{% endif %}>Generate Summary</button>
+        </thead>
+        <tbody>
+          {% for score in scores %}
+            <tr>
+              <td class="skill-name">
+                <span class="skill-text" title="{{ score.skill }}" data-full-name="{{ score.skill }}">{{ score.skill }}</span>
+              </td>
+              <td class="skill-score">
+                <select class="score-select" data-skill="{{ score.skill }}" {% if interview.status == 'completed' %}disabled{% endif %}>
+                  {% for rating in range(1, 6) %}
+                    <option value="{{ rating }}" {% if score.value == rating %}selected{% endif %}>{{ rating }}/5</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="skill-visual">
+                <div class="score-bar-mini">
+                  <span style="width: {{ (score.value / 5) * 100 }}%"></span>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
 
-    <div id="summary-status" class="muted"></div>
+    <div class="actions-panel">
+      <a class="btn-action primary" href="{{ url_for('main.summary', interview_id=interview.id) }}">
+        <span>View Summary</span>
+      </a>
+      <button id="generate-summary" class="btn-action secondary" type="button" {% if interview.status != 'completed' %}disabled{% endif %}>
+        <span>Generate Summary</span>
+      </button>
+    </div>
+
+    <div id="summary-status" class="summary-status"></div>
   </div>
 </section>
+
 {% endblock %}
 
 {% block scripts %}
@@ -144,137 +233,192 @@
   const isLocked = {{ 'true' if interview.status == 'completed' else 'false' }};
 
   const timerEl = document.getElementById('live-timer');
-  const startedAt = timerEl.dataset.started ? new Date(timerEl.dataset.started) : null;
+  const startedAt = new Date(timerEl.dataset.started);
   const endedAt = timerEl.dataset.ended ? new Date(timerEl.dataset.ended) : null;
 
-  const formatTime = (ms) => {
-    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-    const seconds = String(totalSeconds % 60).padStart(2, '0');
-    return `${hours}:${minutes}:${seconds}`;
-  };
-
-  if (startedAt) {
-    const updateTimer = () => {
-      const end = endedAt || new Date();
-      timerEl.textContent = formatTime(end - startedAt);
-    };
-    updateTimer();
-    if (!endedAt) {
-      setInterval(updateTimer, 1000);
-    }
+  function updateTimer() {
+    const now = endedAt || new Date();
+    const diff = now - startedAt;
+    
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    
+    timerEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
-  document.querySelectorAll('.question-list li').forEach(item => {
-    const questionId = item.dataset.questionId;
-    const askedToggle = item.querySelector('.asked-toggle');
-    const ratingSelect = item.querySelector('.rating-select');
-    const noteInput = item.querySelector('.question-note-input');
+  if (!endedAt) {
+    updateTimer();
+    setInterval(updateTimer, 1000);
+  } else {
+    updateTimer();
+  }
 
-    const updateQuestion = () => {
-      if (isLocked) return;
-      fetch(`/api/interviews/${interviewId}/questions/${questionId}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          asked: askedToggle.checked,
-          rating: ratingSelect.value ? Number(ratingSelect.value) : null,
-          note: noteInput.value
-        })
+  if (!isLocked) {
+    // Question asked toggle handlers
+    document.querySelectorAll('.asked-toggle').forEach(checkbox => {
+      checkbox.addEventListener('change', async (e) => {
+        const questionId = e.target.closest('.question-item').dataset.questionId;
+        const asked = e.target.checked;
+        
+        try {
+          const response = await fetch(`/questions/${questionId}/asked`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({asked})
+          });
+          
+          if (response.ok) {
+            const questionItem = e.target.closest('.question-item');
+            questionItem.classList.toggle('question-asked', asked);
+          }
+        } catch (error) {
+          console.error('Error updating question status:', error);
+          e.target.checked = !asked;
+        }
       });
-    };
-
-    askedToggle.addEventListener('change', updateQuestion);
-    ratingSelect.addEventListener('change', updateQuestion);
-    noteInput.addEventListener('change', updateQuestion);
-  });
-
-  const skillSelect = document.getElementById('note-skill-select');
-  const customSkillField = document.getElementById('custom-skill-field');
-  const customSkillInput = document.getElementById('custom-skill-input');
-
-  const toggleCustomSkill = () => {
-    if (skillSelect.value === 'other') {
-      customSkillField.classList.remove('hidden');
-      customSkillInput.setAttribute('required', 'required');
-    } else {
-      customSkillField.classList.add('hidden');
-      customSkillInput.value = '';
-      customSkillInput.removeAttribute('required');
-    }
-  };
-
-  skillSelect.addEventListener('change', toggleCustomSkill);
-  toggleCustomSkill();
-
-  document.getElementById('note-form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (isLocked) return;
-    const form = event.target;
-    const payload = Object.fromEntries(new FormData(form));
-    if (payload.skill === 'other') {
-      payload.custom_skill = customSkillInput.value.trim();
-    }
-
-    const response = await fetch(`/api/interviews/${interviewId}/notes`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      const list = document.getElementById('note-list');
-      const card = document.createElement('div');
-      card.className = 'note-card';
-      card.innerHTML = `
+    // Question rating handlers
+    document.querySelectorAll('.rating-select').forEach(select => {
+      select.addEventListener('change', async (e) => {
+        const questionId = e.target.closest('.question-item').dataset.questionId;
+        const rating = parseInt(e.target.value) || null;
+        
+        try {
+          const response = await fetch(`/questions/${questionId}/rating`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({rating})
+          });
+          
+          if (!response.ok) {
+            console.error('Error updating question rating');
+          }
+        } catch (error) {
+          console.error('Error updating question rating:', error);
+        }
+      });
+    });
+
+    // Note form handler
+    const noteForm = document.getElementById('note-form');
+    const noteList = document.getElementById('note-list');
+    const skillSelect = document.getElementById('note-skill-select');
+    const customSkillField = document.getElementById('custom-skill-field');
+
+    skillSelect.addEventListener('change', () => {
+      customSkillField.classList.toggle('hidden', skillSelect.value !== 'other');
+    });
+
+    noteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const skill = formData.get('skill') === 'other' ? formData.get('custom_skill') : formData.get('skill');
+      
+      const noteData = {
+        skill: skill,
+        tag: formData.get('tag'),
+        text: formData.get('text')
+      };
+
+      try {
+        const response = await fetch(`/interviews/${interviewId}/notes`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(noteData)
+        });
+
+        if (response.ok) {
+          const note = await response.json();
+          addNoteToList(note);
+          e.target.reset();
+          customSkillField.classList.add('hidden');
+        }
+      } catch (error) {
+        console.error('Error adding note:', error);
+      }
+    });
+
+    // Score select handlers
+    document.querySelectorAll('.score-select').forEach(select => {
+      select.addEventListener('change', async (e) => {
+        const skill = e.target.dataset.skill;
+        const value = parseInt(e.target.value);
+        
+        try {
+          const response = await fetch(`/interviews/${interviewId}/scores`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({skill, value})
+          });
+          
+          if (response.ok) {
+            const visual = e.target.closest('tr').querySelector('.score-bar-mini span');
+            visual.style.width = `${(value / 5) * 100}%`;
+          }
+        } catch (error) {
+          console.error('Error updating score:', error);
+        }
+      });
+    });
+  }
+
+  function addNoteToList(note) {
+    const noteCard = document.createElement('div');
+    noteCard.className = `note-card note-${note.tag.toLowerCase().replace(' ', '-')}`;
+    noteCard.innerHTML = `
+      <div class="note-header-card">
         <div class="note-meta">
-          <span class="pill">${data.note.skill}</span>
-          <span class="tag">${data.note.tag}</span>
+          <span class="pill pill-skill">${note.skill}</span>
+          <span class="tag tag-${note.tag.toLowerCase().replace(' ', '-')}">${note.tag}</span>
         </div>
-        <p>${data.note.text}</p>
-        <span class="muted">just now</span>
-      `;
-      list.prepend(card);
-      form.reset();
-      form.skill.value = '{{ note_skills[0] if note_skills else "General" }}';
-      form.tag.value = 'Strength';
-      toggleCustomSkill();
+        <span class="note-time">${new Date(note.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
+      </div>
+      <p class="note-content">${note.text}</p>
+    `;
+    
+    const emptyState = noteList.querySelector('.notes-empty');
+    if (emptyState) {
+      emptyState.remove();
     }
-  });
+    
+    noteList.insertBefore(noteCard, noteList.firstChild);
+    
+    // Update notes count
+    const notesHeader = document.querySelector('.notes-header h3');
+    const currentCount = parseInt(notesHeader.textContent.match(/\d+/)[0]);
+    notesHeader.textContent = `All Notes (${currentCount + 1})`;
+  }
 
-  document.querySelectorAll('.score-select').forEach(select => {
-    select.addEventListener('change', () => {
-      if (isLocked) return;
-      fetch(`/api/interviews/${interviewId}/scores`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          skill: select.dataset.skill,
-          value: select.value
-        })
-      });
-    });
-  });
-
+  // Generate summary handler
   document.getElementById('generate-summary').addEventListener('click', async () => {
+    const button = document.getElementById('generate-summary');
     const status = document.getElementById('summary-status');
-    if (isLocked === false) {
-      status.textContent = 'End the interview to generate summary.';
-      return;
-    }
-    status.textContent = 'Generating summary...';
-    const response = await fetch(`/api/interviews/${interviewId}/generate_summary`, {
-      method: 'POST'
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      status.textContent = `Summary ready. Recommendation: ${data.recommendation}`;
-      window.location.href = `/interviews/${interviewId}/summary`;
-    } else {
-      status.textContent = 'Summary generation failed.';
+    
+    button.disabled = true;
+    button.innerHTML = '<span>Generating...</span>';
+    status.innerHTML = '<div class="loading">Generating summary...</div>';
+    
+    try {
+      const response = await fetch(`/interviews/${interviewId}/generate-summary`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        status.innerHTML = '<div class="success">Summary generated successfully!</div>';
+        setTimeout(() => {
+          window.location.href = `/interviews/${interviewId}/summary`;
+        }, 1000);
+      } else {
+        status.innerHTML = '<div class="error">Error generating summary. Please try again.</div>';
+        button.disabled = false;
+        button.innerHTML = '<span>Generate Summary</span>';
+      }
+    } catch (error) {
+      status.innerHTML = '<div class="error">Error generating summary. Please try again.</div>';
+      button.disabled = false;
+      button.innerHTML = '<span>Generate Summary</span>';
     }
   });
 </script>

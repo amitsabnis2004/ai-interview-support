@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Layout Options Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .layout-option { margin: 40px 0; padding: 20px; border: 2px solid #e5e7eb; border-radius: 8px; }
+        .layout-title { font-size: 1.5rem; font-weight: bold; color: #1a202c; margin-bottom: 15px; }
+        
+        /* Option 1: Grid Cards */
+        .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card-name { font-size: 1.2rem; font-weight: bold; margin-bottom: 8px; }
+        .card-role { color: #718096; margin-bottom: 15px; }
+        .card-status { display: inline-block; padding: 4px 12px; background: #48bb78; color: white; border-radius: 20px; font-size: 0.8rem; }
+        .card-actions { margin-top: 15px; display: flex; gap: 10px; }
+        .card-btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-secondary { background: #e5e7eb; color: #374151; }
+        
+        /* Option 2: List View */
+        .list-view { background: white; border-radius: 8px; overflow: hidden; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid #f3f4f6; }
+        .list-item:last-child { border-bottom: none; }
+        .list-left { display: flex; flex-direction: column; }
+        .list-right { display: flex; align-items: center; gap: 15px; }
+        
+        /* Option 3: Kanban */
+        .kanban { display: flex; gap: 20px; }
+        .kanban-col { flex: 1; background: #f9fafb; padding: 15px; border-radius: 8px; }
+        .kanban-title { font-weight: bold; margin-bottom: 15px; color: #374151; }
+        .kanban-card { background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        
+        /* Option 4: Timeline */
+        .timeline { position: relative; padding-left: 30px; }
+        .timeline::before { content: ''; position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: #e5e7eb; }
+        .timeline-item { position: relative; margin-bottom: 30px; }
+        .timeline-dot { position: absolute; left: -37px; width: 12px; height: 12px; background: #48bb78; border-radius: 50%; }
+        .timeline-content { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        
+        /* Option 5: Compact Tiles */
+        .compact-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .tile { background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .tile-name { font-weight: bold; margin-bottom: 5px; }
+        .tile-score { color: #667eea; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>🎯 Interview Layout Options Demo</h1>
+
+<div class="layout-option">
+    <div class="layout-title">Option 1: Grid Cards Layout</div>
+    <div class="grid-cards">
+        <div class="card">
+            <div class="card-name">Geda Venkata Naga Mohini Souri</div>
+            <div class="card-role">Data Scientist • Electronics</div>
+            <span class="card-status">IN PROGRESS</span>
+            <div style="margin: 15px 0;">
+                <strong>Avg Score: 3.0/5</strong>
+            </div>
+            <div class="card-actions">
+                <button class="card-btn btn-primary">Resume Interview</button>
+                <button class="card-btn btn-secondary">View Details</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-name">John Smith</div>
+            <div class="card-role">Backend Engineer • Computer Science</div>
+            <span class="card-status">IN PROGRESS</span>
+            <div style="margin: 15px 0;">
+                <strong>Avg Score: 4.2/5</strong>
+            </div>
+            <div class="card-actions">
+                <button class="card-btn btn-primary">Resume Interview</button>
+                <button class="card-btn btn-secondary">View Details</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="layout-option">
+    <div class="layout-title">Option 2: List View with Actions</div>
+    <div class="list-view">
+        <div class="list-item">
+            <div class="list-left">
+                <strong>Geda Venkata Naga Mohini Souri</strong>
+                <span style="color: #718096;">Data Scientist • Electronics</span>
+            </div>
+            <div class="list-right">
+                <span class="card-status">IN PROGRESS</span>
+                <span><strong>3.0/5</strong></span>
+                <button class="card-btn btn-primary">Resume</button>
+            </div>
+        </div>
+        <div class="list-item">
+            <div class="list-left">
+                <strong>John Smith</strong>
+                <span style="color: #718096;">Backend Engineer • Computer Science</span>
+            </div>
+            <div class="list-right">
+                <span class="card-status">IN PROGRESS</span>
+                <span><strong>4.2/5</strong></span>
+                <button class="card-btn btn-primary">Resume</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="layout-option">
+    <div class="layout-title">Option 3: Kanban Board Style</div>
+    <div class="kanban">
+        <div class="kanban-col">
+            <div class="kanban-title">📝 Starting</div>
+            <div class="kanban-card">
+                <strong>Alice Johnson</strong><br>
+                <small>Frontend Developer</small>
+            </div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-title">⚡ In Progress</div>
+            <div class="kanban-card">
+                <strong>Mohini Souri</strong><br>
+                <small>Data Scientist</small><br>
+                <span style="color: #667eea;">Score: 3.0/5</span>
+            </div>
+            <div class="kanban-card">
+                <strong>John Smith</strong><br>
+                <small>Backend Engineer</small><br>
+                <span style="color: #667eea;">Score: 4.2/5</span>
+            </div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-title">⏳ Review Pending</div>
+            <div class="kanban-card">
+                <strong>Sarah Wilson</strong><br>
+                <small>DevOps Engineer</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="layout-option">
+    <div class="layout-title">Option 4: Timeline Layout</div>
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+                <strong>Geda Venkata Naga Mohini Souri</strong><br>
+                <span style="color: #718096;">Started 45 mins ago</span><br>
+                <span>Current: Technical Assessment</span><br>
+                <span style="color: #667eea;">Score: 3.0/5</span>
+                <div style="margin-top: 10px;">
+                    <button class="card-btn btn-primary">Continue</button>
+                </div>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+                <strong>John Smith</strong><br>
+                <span style="color: #718096;">Started 1.5 hours ago</span><br>
+                <span>Current: System Design</span><br>
+                <span style="color: #667eea;">Score: 4.2/5</span>
+                <div style="margin-top: 10px;">
+                    <button class="card-btn btn-primary">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="layout-option">
+    <div class="layout-title">Option 5: Compact Tiles</div>
+    <div class="compact-tiles">
+        <div class="tile">
+            <div class="tile-name">Mohini S.</div>
+            <div style="color: #718096; font-size: 0.9rem;">Data Scientist</div>
+            <div class="tile-score">3.0/5</div>
+            <button class="card-btn btn-primary" style="margin-top: 10px;">Resume</button>
+        </div>
+        <div class="tile">
+            <div class="tile-name">John S.</div>
+            <div style="color: #718096; font-size: 0.9rem;">Backend Eng.</div>
+            <div class="tile-score">4.2/5</div>
+            <button class="card-btn btn-primary" style="margin-top: 10px;">Resume</button>
+        </div>
+        <div class="tile">
+            <div class="tile-name">Alice J.</div>
+            <div style="color: #718096; font-size: 0.9rem;">Frontend Dev.</div>
+            <div class="tile-score">--</div>
+            <button class="card-btn btn-primary" style="margin-top: 10px;">Start</button>
+        </div>
+        <div class="tile">
+            <div class="tile-name">Sarah W.</div>
+            <div style="color: #718096; font-size: 0.9rem;">DevOps Eng.</div>
+            <div class="tile-score">--</div>
+            <button class="card-btn btn-primary" style="margin-top: 10px;">Start</button>
+        </div>
+    </div>
+</div>
+
+<h2>📊 Comparison Summary:</h2>
+<ul>
+    <li><strong>Grid Cards:</strong> Best for detailed view, good for 2-6 interviews</li>
+    <li><strong>List View:</strong> Most compact, great for many interviews</li>
+    <li><strong>Kanban:</strong> Perfect for workflow tracking and status visualization</li>
+    <li><strong>Timeline:</strong> Excellent for time-based progress tracking</li>
+    <li><strong>Compact Tiles:</strong> Quick overview, ideal for 8+ interviews</li>
+</ul>
+
+</body>
+</html>
