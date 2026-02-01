@@ -33,6 +33,126 @@ def _complete_interview(client, interview_id: int) -> None:
     assert end_response.status_code == 302
 
 
+def test_get_notes_returns_ordered_list(client, app):
+    interview_id = _create_interview(client, email="notes.order@example.com")
+
+    first = client.post(
+        f"/api/interviews/{interview_id}/notes",
+        data=json.dumps({"skill": "Python", "tag": "Strength", "text": "First"}),
+        content_type="application/json",
+    )
+    assert first.status_code == 200
+
+    second = client.post(
+        f"/api/interviews/{interview_id}/notes",
+        data=json.dumps({"skill": "Python", "tag": "Strength", "text": "Second"}),
+        content_type="application/json",
+    )
+    assert second.status_code == 200
+
+    response = client.get(f"/api/interviews/{interview_id}/notes")
+    assert response.status_code == 200
+    data = json.loads(response.data)
+    assert data["status"] == "ok"
+    assert data["notes"][0]["text"] == "Second"
+
+
+def test_delete_note_success(client, app):
+    interview_id = _create_interview(client, email="delete.note@example.com")
+
+    create = client.post(
+        f"/api/interviews/{interview_id}/notes",
+        data=json.dumps({"skill": "Python", "tag": "Strength", "text": "Remove me"}),
+        content_type="application/json",
+    )
+    assert create.status_code == 200
+    note_id = json.loads(create.data)["note"]["id"]
+
+    delete = client.delete(f"/api/interviews/{interview_id}/notes/{note_id}")
+    assert delete.status_code == 200
+    assert json.loads(delete.data)["status"] == "ok"
+
+    fetch = client.get(f"/api/interviews/{interview_id}/notes")
+    data = json.loads(fetch.data)
+    assert all(note["id"] != note_id for note in data["notes"])
+
+
+def test_delete_note_locked_when_completed(client, app):
+    interview_id = _create_interview(client, email="locked.note@example.com")
+
+    create = client.post(
+        f"/api/interviews/{interview_id}/notes",
+        data=json.dumps({"skill": "Python", "tag": "Strength", "text": "Locked"}),
+        content_type="application/json",
+    )
+    note_id = json.loads(create.data)["note"]["id"]
+
+    _complete_interview(client, interview_id)
+
+    delete = client.delete(f"/api/interviews/{interview_id}/notes/{note_id}")
+    assert delete.status_code == 400
+    assert json.loads(delete.data)["status"] == "locked"
+
+
+def test_delete_question_bank_question(client):
+    response = client.post(
+        "/question-bank",
+        data={"skill_new": "Testing", "questions": "Q1\nQ2"},
+    )
+    assert response.status_code == 302
+
+    delete = client.post(
+        "/question-bank/Testing/questions/delete",
+        data={"question": "Q1"},
+    )
+    assert delete.status_code == 302
+
+    page = client.get("/question-bank")
+    assert page.status_code == 200
+    assert b"Q1" not in page.data
+    assert b"Q2" in page.data
+
+
+def test_delete_question_bank_question_missing_no_change(client):
+    response = client.post(
+        "/question-bank",
+        data={"skill_new": "Testing", "questions": "Q1"},
+    )
+    assert response.status_code == 302
+
+    delete = client.post(
+        "/question-bank/Testing/questions/delete",
+        data={"question": "Does not exist"},
+    )
+    assert delete.status_code == 302
+
+    page = client.get("/question-bank")
+    assert page.status_code == 200
+    assert b"Q1" in page.data
+
+
+def test_generate_summary_returns_fallback_when_llm_disabled(client, app):
+    interview_id = _create_interview(client, email="fallback.summary@example.com")
+    _complete_interview(client, interview_id)
+
+    generate = client.post(f"/api/interviews/{interview_id}/generate_summary")
+    assert generate.status_code == 200
+    data = json.loads(generate.data)
+    assert data["summary"]
+    assert data["recommendation"]
+    assert data["reason"]
+
+
+def test_completed_pagination_invalid_page_defaults(client):
+    for index in range(7):
+        interview_id = _create_interview(client, email=f"invalidpage{index}@example.com")
+        _complete_interview(client, interview_id)
+
+    response = client.get("/?completed_page=abc")
+    assert response.status_code == 200
+    assert b"Page 1 of 2" in response.data
+
+
 def test_completed_interview_shows_hire_status_pill(client, app):
     interview_id = _create_interview(client)
     _complete_interview(client, interview_id)
