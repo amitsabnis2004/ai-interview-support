@@ -4322,8 +4322,8 @@ html {
 
 .accordion {
   flex: 1;
-  overflow-y: auto;
-  max-height: calc(100% - 120px);
+  overflow: visible;
+  max-height: none;
   padding-right: 0.5rem;
 }
 
@@ -4332,7 +4332,7 @@ html {
   border: 2px solid var(--border-light);
   border-radius: 12px;
   margin-bottom: 0.75rem;
-  overflow: hidden;
+  overflow: visible;
   transition: var(--transition);
 }
 
@@ -4377,8 +4377,8 @@ html {
 
 /* Question Items */
 .question-list {
-  max-height: 400px;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
   padding-right: 0.5rem;
 }
 

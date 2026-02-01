@@ -264,9 +264,18 @@
   let skillSelect;
   let customSkillField;
 
-  const questionCacheKey = `interview:${interviewId}:questions`;
+  const interviewCacheSeed = timerEl?.dataset?.started || '';
+  const questionCacheKey = `interview:${interviewId}:${interviewCacheSeed}:questions`;
+  const legacyQuestionCacheKey = `interview:${interviewId}:questions`;
 
   function loadQuestionCache() {
+    if (legacyQuestionCacheKey !== questionCacheKey) {
+      try {
+        localStorage.removeItem(legacyQuestionCacheKey);
+      } catch (error) {
+        console.error('Error clearing legacy question cache:', error);
+      }
+    }
     try {
       return JSON.parse(localStorage.getItem(questionCacheKey) || '{}');
     } catch (error) {
