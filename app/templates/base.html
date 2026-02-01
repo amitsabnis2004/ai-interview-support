@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="description" content="AI-Assisted Technical Interview Companion - Streamline your interview process with structured questions, real-time notes, and automated summaries." />
+  <meta name="theme-color" content="#667eea" />
+  <title>{{ title or "Interview Companion" }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v=7" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo">
+      <span class="logo-icon">IC</span>
+      <span class="logo-text">Interview Companion</span>
+    </div>
+    <nav class="main-nav">
+      <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}" data-nav="dashboard">
+        <span class="nav-icon">⬜</span>
+        <span class="nav-text">Dashboard</span>
+      </a>
+      <a href="{{ url_for('main.question_bank') }}" class="nav-link {% if request.endpoint == 'main.question_bank' %}active{% endif %}" data-nav="questions">
+        <span class="nav-icon">⬜</span>
+        <span class="nav-text">Question Bank</span>
+      </a>
+      {% if interview %}
+        <a href="{{ url_for('main.live_interview', interview_id=interview.id) }}" class="nav-link {% if request.endpoint == 'main.live_interview' %}active{% endif %}" data-nav="live">
+          <span class="nav-icon">⬜</span>
+          <span class="nav-text">Live Interview</span>
+        </a>
+        <a href="{{ url_for('main.summary', interview_id=interview.id) }}" class="nav-link {% if request.endpoint == 'main.summary' %}active{% endif %}" data-nav="summary">
+          <span class="nav-icon">⬜</span>
+          <span class="nav-text">Summary</span>
+        </a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <div class="content-wrapper">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div class="footer-left">
+        <span class="footer-brand">Interview Companion</span>
+        <span class="footer-version">v1.0</span>
+      </div>
+      <div class="footer-center">
+        <span class="footer-text">AI-Assisted Technical Interview Platform</span>
+      </div>
+      <div class="footer-right">
+        <span class="footer-copy">&copy; 2026 All rights reserved</span>
+      </div>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

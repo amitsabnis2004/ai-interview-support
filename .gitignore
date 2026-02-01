@@ -1,0 +1,74 @@
+ 
+# Python
+ 
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.env
+.venv/
+venv/
+ENV/
+env/
+
+ 
+# Virtualenv / Poetry / Pip
+ 
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+ 
+# Logs
+ 
+*.log
+logs/
+
+ 
+# OS junk
+ 
+.DS_Store
+Thumbs.db
+
+ 
+# IDE / Editor
+ 
+.vscode/
+.idea/
+*.swp
+
+ 
+# Environment & secrets
+ 
+.env
+.env.*
+*.key
+*.pem
+
+ 
+# Docker
+ 
+docker-compose.override.yml
+
+ 
+# Node (if frontend tooling ever added)
+ 
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+ 
+# Database / local state
+ 
+*.sqlite3
+*.db
+
+ 
+# Test & coverage
+ 
+.coverage
+htmlcov/
+.pytest_cache/

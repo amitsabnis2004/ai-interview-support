@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel question-bank-header">
+  <div class="header-content">
+    <div>
+      <h1>Question Bank Manager</h1>
+      <p class="subtitle">Organize and manage your interview questions by skill category</p>
+    </div>
+    <div class="bank-stats">
+      <div class="stat-card-small">
+        <div class="stat-value-small">{{ question_bank|length }}</div>
+        <div class="stat-label-small">Skills</div>
+      </div>
+      <div class="stat-card-small">
+        <div class="stat-value-small">{{ question_bank.values()|map('length')|sum }}</div>
+        <div class="stat-label-small">Questions</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel add-questions-panel">
+    <div class="panel-header-simple">
+      <h2>Add Questions</h2>
+      <p class="panel-description">Add new questions to existing or new skill categories</p>
+    </div>
+    <form action="{{ url_for('main.add_question_bank') }}" method="post" class="form question-form">
+      <div class="form-section-light">
+        <h3 class="form-subtitle">Select Skill Category</h3>
+        <label>
+          Existing Skill
+          <select name="skill_existing" id="skill-existing">
+            <option value="">-- Choose Existing Skill --</option>
+            {% for skill in question_bank.keys()|sort %}
+              <option value="{{ skill }}">{{ skill }} ({{ question_bank[skill]|length }} questions)</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="or-divider">
+          <span>OR</span>
+        </div>
+        <label>
+          Create New Skill
+          <input type="text" name="skill_new" id="skill-new" placeholder="e.g., System Design, Cloud Computing" />
+        </label>
+      </div>
+      <div class="form-section-light">
+        <h3 class="form-subtitle">Add Questions</h3>
+        <label>
+          Questions (one per line)
+          <textarea name="questions" rows="8" placeholder="Enter each question on a new line...&#10;Example:&#10;What is the difference between REST and GraphQL?&#10;Explain microservices architecture." required></textarea>
+        </label>
+      </div>
+      <button type="submit" class="primary btn-large">Save Questions</button>
+    </form>
+  </div>
+
+  <div class="panel question-list-panel">
+    <div class="panel-header-simple">
+      <h2>Question Bank</h2>
+      <p class="panel-description">Browse and manage your question library</p>
+    </div>
+    {% if question_bank %}
+      <div class="accordion question-bank-accordion">
+        {% for skill, questions in question_bank.items()|sort %}
+          <details class="skill-category">
+            <summary class="skill-summary">
+              <div class="skill-info">
+                <span class="skill-name">{{ skill }}</span>
+                <span class="question-count">{{ questions|length }} question{{ 's' if questions|length != 1 else '' }}</span>
+              </div>
+              <div class="skill-actions">
+                <form action="{{ url_for('main.delete_question_bank_skill', skill=skill) }}" method="post" class="delete-form" onclick="return confirm('Delete all questions for {{ skill }}?')">
+                  <button class="btn-delete" type="submit" title="Delete this skill category">
+                    <span>Delete</span>
+                  </button>
+                </form>
+              </div>
+            </summary>
+            <div class="questions-content">
+              {% if questions %}
+                <ul class="questions-list">
+                  {% for question in questions %}
+                    <li class="question-item-bank">
+                      <div class="question-item-content">
+                        <span class="question-number">{{ loop.index }}</span>
+                        <span class="question-text-bank">{{ question }}</span>
+                      </div>
+                      <form action="{{ url_for('main.delete_question_bank_question', skill=skill) }}" method="post" class="delete-form" onclick="return confirm('Delete this question?')">
+                        <input type="hidden" name="question" value="{{ question }}" />
+                        <button class="btn-delete btn-delete-question" type="submit" title="Delete this question">
+                          <span>Delete</span>
+                        </button>
+                      </form>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="no-questions">No questions in this category yet.</p>
+              {% endif %}
+            </div>
+          </details>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state-bank">
+        <div class="empty-icon">📝</div>
+        <p class="empty-message">No question bank yet</p>
+        <p class="empty-hint">Add your first skill category and questions using the form on the left</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+  // Toggle behavior for skill selection
+  const skillExisting = document.getElementById('skill-existing');
+  const skillNew = document.getElementById('skill-new');
+  
+  if (skillExisting && skillNew) {
+    skillExisting.addEventListener('change', function() {
+      if (this.value) {
+        skillNew.value = '';
+        skillNew.disabled = true;
+      } else {
+        skillNew.disabled = false;
+      }
+    });
+    
+    skillNew.addEventListener('input', function() {
+      if (this.value) {
+        skillExisting.value = '';
+        skillExisting.disabled = true;
+      } else {
+        skillExisting.disabled = false;
+      }
+    });
+  }
+</script>
+{% endblock %}

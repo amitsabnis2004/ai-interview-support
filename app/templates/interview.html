@@ -1,0 +1,667 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel interview-header">
+  <div class="layout-c-container">
+    <!-- Row 1: Badge + Live Interview Title | Live Status + Timer -->
+    <div class="row-1">
+      <div class="left-side">
+        <div class="candidate-badge-compact">
+          <span class="candidate-initial-compact">{{ interview.candidate.name[0] }}</span>
+        </div>
+        <h1 class="live-title">Live Interview</h1>
+      </div>
+      <div class="right-side">
+        <div class="status-timer-inline">
+          <div class="status-indicator {% if interview.status == 'ongoing' %}status-live{% else %}status-ended{% endif %}">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ 'Live' if interview.status == 'ongoing' else 'Completed' }}</span>
+          </div>
+          <div id="live-timer" class="timer" data-started="{{ interview.created_at.isoformat() }}Z" data-ended="{{ interview.ended_at.isoformat() + 'Z' if interview.ended_at else '' }}">
+            00:00:00
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Row 2: Candidate Name | End Interview Button -->
+    <div class="row-2">
+      <div class="left-side">
+        <h2 class="candidate-name-compact">{{ interview.candidate.name }}</h2>
+      </div>
+      <div class="right-side">
+        <form action="{{ url_for('main.end_interview', interview_id=interview.id) }}" method="post" class="end-interview-form-compact">
+          <button type="submit" class="btn-end-interview-compact" {% if interview.status == 'completed' %}disabled{% endif %}>End Interview</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Row 3: Candidate Details | Empty -->
+    <div class="row-3">
+      <div class="left-side">
+        <div class="candidate-meta-compact">
+          <span class="meta-badge">{{ interview.candidate.role }}</span>
+          <span class="meta-divider">•</span>
+          <span class="meta-text">{{ interview.candidate.branch }}</span>
+          <span class="meta-divider">•</span>
+          <span class="meta-text">{{ interview.candidate.degree }}</span>
+        </div>
+      </div>
+      <div class="right-side">
+        <!-- Empty -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="grid three">
+  <div class="panel questions-panel">
+    <div class="panel-header-simple">
+      <h2>Interview Questions</h2>
+      <p class="panel-description">Track questions and candidate responses</p>
+    </div>
+    <div class="accordion">
+      {% for skill, skill_questions in grouped_questions.items() %}
+        <details>
+          <summary>
+            <span>{{ skill }}</span>
+            <span class="muted">{{ skill_questions|length }} questions</span>
+          </summary>
+          <ul class="question-list">
+            {% for question in skill_questions %}
+              <li data-question-id="{{ question.id }}" class="question-item {% if question.asked %}question-asked{% endif %}">
+                <div class="question-header">
+                  <span class="pill pill-skill">{{ question.skill }}</span>
+                  {% if question.asked %}
+                    <span class="question-status-badge asked">✓ Asked</span>
+                  {% endif %}
+                  {% if question.rating %}
+                    <span class="question-rating-badge">★ {{ question.rating }}/5</span>
+                  {% endif %}
+                </div>
+                <div class="question-text">
+                  <p>{{ question.text }}</p>
+                </div>
+                <div class="question-actions">
+                  <label class="checkbox-label">
+                    <input type="checkbox" class="asked-toggle" {% if question.asked %}checked{% endif %} {% if interview.status == 'completed' %}disabled{% endif %} />
+                    <span>Mark as Asked</span>
+                  </label>
+                  <div class="rating-wrapper">
+                    <label class="rating-label">Rating:</label>
+                    <select class="rating-select" {% if interview.status == 'completed' %}disabled{% endif %}>
+                      <option value="">Select</option>
+                      {% for rating in range(1, 6) %}
+                        <option value="{{ rating }}" {% if question.rating == rating %}selected{% endif %}>{{ rating }} Star{{ 's' if rating > 1 else '' }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="question-note-section">
+                  <label class="note-label">Interviewer Notes:</label>
+                  <textarea class="question-note-input" rows="2" placeholder="Add observations about the candidate's response..." {% if interview.status == 'completed' %}disabled{% endif %}>{{ question.note or '' }}</textarea>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </details>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel notes-panel">
+    <div class="panel-header-simple">
+      <h2>Interview Notes</h2>
+      <p class="panel-description">Record observations during the interview</p>
+    </div>
+    <form id="note-form" class="form compact note-form">
+      <div class="form-row">
+        <label>
+          Skill Category
+          <select name="skill" id="note-skill-select" {% if interview.status == 'completed' %}disabled{% endif %}>
+            {% for skill in note_skills %}
+              <option value="{{ skill }}">{{ skill }}</option>
+            {% endfor %}
+            <option value="other">+ Add Custom</option>
+          </select>
+        </label>
+        <label id="custom-skill-field" class="hidden">
+          Custom Skill
+          <input type="text" name="custom_skill" id="custom-skill-input" placeholder="e.g. Problem Solving" {% if interview.status == 'completed' %}disabled{% endif %} />
+        </label>
+        <label>
+          Tag Type
+          <select name="tag" {% if interview.status == 'completed' %}disabled{% endif %}>
+            <option value="Strength">✓ Strength</option>
+            <option value="Weakness">⚠ Weakness</option>
+            <option value="Red Flag">✕ Red Flag</option>
+          </select>
+        </label>
+      </div>
+      <label>
+        Note Content
+        <textarea name="text" rows="3" placeholder="Describe your observation..." required {% if interview.status == 'completed' %}disabled{% endif %}></textarea>
+      </label>
+      <button type="submit" class="primary btn-add-note" {% if interview.status == 'completed' %}disabled{% endif %}>
+        <span>+ Add Note</span>
+      </button>
+    </form>
+
+    <div class="notes-container">
+      <div class="notes-header">
+        <h3>All Notes ({{ notes|length }})</h3>
+      </div>
+      <div class="note-list" id="note-list">
+        {% if notes %}
+          {% for note in notes %}
+            <div class="note-card note-{{ note.tag.lower().replace(' ', '-') }}">
+              <div class="note-header-card">
+                <div class="note-meta">
+                  <span class="pill pill-skill">{{ note.skill }}</span>
+                  <span class="tag tag-{{ note.tag.lower().replace(' ', '-') }}">{{ note.tag }}</span>
+                </div>
+                <div class="note-actions">
+                  <span class="note-time">{{ note.timestamp.strftime('%H:%M') }}</span>
+                  {% if interview.status != 'completed' %}
+                    <button class="note-delete" type="button" data-note-id="{{ note.id }}" aria-label="Delete note">✕</button>
+                  {% endif %}
+                </div>
+              </div>
+              <p class="note-content">{{ note.text }}</p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="notes-empty">
+            <p>No notes yet</p>
+            <span>Add your first observation above</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel scores-panel">
+    <div class="panel-header-simple">
+      <h2>Skill Assessment</h2>
+      <p class="panel-description">Rate candidate performance by skill</p>
+    </div>
+    <div class="score-table-wrapper">
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th>Skill Area</th>
+            <th>Rating</th>
+            <th>Visual</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for score in scores %}
+            <tr>
+              <td class="skill-name">
+                <span class="skill-text" title="{{ score.skill }}" data-full-name="{{ score.skill }}">{{ score.skill }}</span>
+              </td>
+              <td class="skill-score">
+                <select class="score-select" data-skill="{{ score.skill }}" {% if interview.status == 'completed' %}disabled{% endif %}>
+                  {% for rating in range(1, 6) %}
+                    <option value="{{ rating }}" {% if score.value == rating %}selected{% endif %}>{{ rating }}/5</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="skill-visual">
+                <div class="score-bar-mini">
+                  <span style="width: {{ (score.value / 5) * 100 }}%"></span>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="actions-panel">
+      <a class="btn-action primary" href="{{ url_for('main.summary', interview_id=interview.id) }}">
+        <span>View Summary</span>
+      </a>
+      <button id="generate-summary" class="btn-action secondary" type="button" {% if interview.status != 'completed' %}disabled{% endif %}>
+        <span>Generate Summary</span>
+      </button>
+    </div>
+
+    <div id="summary-status" class="summary-status"></div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const interviewId = {{ interview.id }};
+  const isLocked = {{ 'true' if interview.status == 'completed' else 'false' }};
+
+  const timerEl = document.getElementById('live-timer');
+  const startedAt = new Date(timerEl.dataset.started);
+  const endedAt = timerEl.dataset.ended ? new Date(timerEl.dataset.ended) : null;
+
+  function updateTimer() {
+    const now = endedAt || new Date();
+    const diff = now - startedAt;
+    
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    
+    timerEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  if (!endedAt) {
+    updateTimer();
+    setInterval(updateTimer, 1000);
+  } else {
+    updateTimer();
+  }
+
+  let noteForm;
+  let noteList;
+  let skillSelect;
+  let customSkillField;
+
+  const questionCacheKey = `interview:${interviewId}:questions`;
+
+  function loadQuestionCache() {
+    try {
+      return JSON.parse(localStorage.getItem(questionCacheKey) || '{}');
+    } catch (error) {
+      console.error('Error reading question cache:', error);
+      return {};
+    }
+  }
+
+  function saveQuestionCache(cache) {
+    try {
+      localStorage.setItem(questionCacheKey, JSON.stringify(cache));
+    } catch (error) {
+      console.error('Error saving question cache:', error);
+    }
+  }
+
+  function updateQuestionCache(questionId, patch) {
+    const cache = loadQuestionCache();
+    cache[questionId] = { ...(cache[questionId] || {}), ...patch };
+    saveQuestionCache(cache);
+  }
+
+  function seedQuestionCacheFromDom() {
+    const cache = loadQuestionCache();
+    let updated = false;
+    document.querySelectorAll('.question-item').forEach(item => {
+      const questionId = item.dataset.questionId;
+      const existing = cache[questionId] || {};
+
+      const askedToggle = item.querySelector('.asked-toggle');
+      const ratingSelect = item.querySelector('.rating-select');
+      const noteInput = item.querySelector('.question-note-input');
+
+      if (askedToggle && existing.asked === undefined) {
+        existing.asked = askedToggle.checked;
+        updated = true;
+      }
+
+      if (ratingSelect && existing.rating === undefined) {
+        existing.rating = ratingSelect.value ? parseInt(ratingSelect.value, 10) : null;
+        updated = true;
+      }
+
+      if (noteInput && existing.note === undefined) {
+        existing.note = noteInput.value || '';
+        updated = true;
+      }
+
+      cache[questionId] = existing;
+    });
+
+    if (updated) {
+      saveQuestionCache(cache);
+    }
+  }
+
+  function applyQuestionCache() {
+    const cache = loadQuestionCache();
+    document.querySelectorAll('.question-item').forEach(item => {
+      const questionId = item.dataset.questionId;
+      const cached = cache[questionId];
+      if (!cached) {
+        return;
+      }
+
+      const askedToggle = item.querySelector('.asked-toggle');
+      if (askedToggle && typeof cached.asked === 'boolean') {
+        askedToggle.checked = cached.asked;
+        item.classList.toggle('question-asked', cached.asked);
+      }
+
+      const ratingSelect = item.querySelector('.rating-select');
+      if (ratingSelect && cached.rating !== undefined && cached.rating !== null) {
+        ratingSelect.value = String(cached.rating);
+      }
+
+      const noteInput = item.querySelector('.question-note-input');
+      if (noteInput && typeof cached.note === 'string') {
+        noteInput.value = cached.note;
+      }
+    });
+  }
+
+  seedQuestionCacheFromDom();
+  applyQuestionCache();
+
+  if (!isLocked) {
+    // Question asked toggle handlers
+    document.querySelectorAll('.asked-toggle').forEach(checkbox => {
+      checkbox.addEventListener('change', async (e) => {
+        const questionId = e.target.closest('.question-item').dataset.questionId;
+        const asked = e.target.checked;
+        
+        try {
+          const response = await fetch(`/api/interviews/${interviewId}/questions/${questionId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({asked})
+          });
+          
+          if (response.ok) {
+            const questionItem = e.target.closest('.question-item');
+            questionItem.classList.toggle('question-asked', asked);
+            updateQuestionCache(questionId, { asked });
+          }
+        } catch (error) {
+          console.error('Error updating question status:', error);
+          e.target.checked = !asked;
+        }
+      });
+    });
+
+    // Question rating handlers
+    document.querySelectorAll('.rating-select').forEach(select => {
+      select.addEventListener('change', async (e) => {
+        const questionId = e.target.closest('.question-item').dataset.questionId;
+        const rating = parseInt(e.target.value) || null;
+        
+        try {
+          const response = await fetch(`/api/interviews/${interviewId}/questions/${questionId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({rating})
+          });
+          
+          if (!response.ok) {
+            console.error('Error updating question rating');
+          } else {
+            updateQuestionCache(questionId, { rating });
+          }
+        } catch (error) {
+          console.error('Error updating question rating:', error);
+        }
+      });
+    });
+
+    // Note form handler
+    noteForm = document.getElementById('note-form');
+    noteList = document.getElementById('note-list');
+    skillSelect = document.getElementById('note-skill-select');
+    customSkillField = document.getElementById('custom-skill-field');
+
+    if (skillSelect && customSkillField) {
+      skillSelect.addEventListener('change', () => {
+        customSkillField.classList.toggle('hidden', skillSelect.value !== 'other');
+      });
+    }
+
+    noteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const rawSkill = formData.get('skill');
+      const customSkill = (formData.get('custom_skill') || '').trim();
+
+      if (rawSkill === 'other' && !customSkill) {
+        alert('Please enter a custom skill.');
+        return;
+      }
+      const noteData = {
+        skill: rawSkill,
+        custom_skill: customSkill,
+        tag: formData.get('tag'),
+        text: formData.get('text')
+      };
+
+      try {
+        const response = await fetch(`/api/interviews/${interviewId}/notes`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(noteData)
+        });
+
+        const payload = await response.json().catch(() => null);
+        if (response.ok && payload && payload.note) {
+          prependNote(payload.note);
+          e.target.reset();
+          if (customSkillField) {
+            customSkillField.classList.add('hidden');
+          }
+          await refreshNotes();
+        } else {
+          console.error('Error adding note:', payload);
+        }
+      } catch (error) {
+        console.error('Error adding note:', error);
+      }
+    });
+
+    // Note input autosave
+    const noteSaveTimers = new Map();
+
+    const saveNote = async (questionId, note) => {
+      try {
+        const response = await fetch(`/api/interviews/${interviewId}/questions/${questionId}`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ note })
+        });
+
+        if (!response.ok) {
+          console.error('Error updating question note');
+        }
+      } catch (error) {
+        console.error('Error updating question note:', error);
+      }
+    };
+
+    document.querySelectorAll('.question-note-input').forEach(textarea => {
+      textarea.addEventListener('input', (e) => {
+        const questionId = e.target.closest('.question-item').dataset.questionId;
+        const note = e.target.value;
+        updateQuestionCache(questionId, { note });
+
+        if (noteSaveTimers.has(questionId)) {
+          clearTimeout(noteSaveTimers.get(questionId));
+        }
+
+        noteSaveTimers.set(questionId, setTimeout(() => {
+          saveNote(questionId, note);
+        }, 500));
+      });
+
+      textarea.addEventListener('blur', (e) => {
+        const questionId = e.target.closest('.question-item').dataset.questionId;
+        const note = e.target.value;
+        updateQuestionCache(questionId, { note });
+        saveNote(questionId, note);
+      });
+    });
+
+    // Score select handlers
+    document.querySelectorAll('.score-select').forEach(select => {
+      select.addEventListener('change', async (e) => {
+        const skill = e.target.dataset.skill;
+        const value = parseInt(e.target.value);
+        
+        try {
+          const response = await fetch(`/api/interviews/${interviewId}/scores`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({skill, value})
+          });
+          
+          if (response.ok) {
+            const visual = e.target.closest('tr').querySelector('.score-bar-mini span');
+            visual.style.width = `${(value / 5) * 100}%`;
+          }
+        } catch (error) {
+          console.error('Error updating score:', error);
+        }
+      });
+    });
+  }
+
+  function buildNoteCard(note) {
+    const noteCard = document.createElement('div');
+    noteCard.className = `note-card note-${note.tag.toLowerCase().replace(' ', '-')}`;
+    noteCard.innerHTML = `
+      <div class="note-header-card">
+        <div class="note-meta">
+          <span class="pill pill-skill">${note.skill}</span>
+          <span class="tag tag-${note.tag.toLowerCase().replace(' ', '-')}">${note.tag}</span>
+        </div>
+        <div class="note-actions">
+          <span class="note-time">${new Date(note.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
+          ${isLocked ? '' : `<button class="note-delete" type="button" data-note-id="${note.id}" aria-label="Delete note">✕</button>`}
+        </div>
+      </div>
+      <p class="note-content">${note.text}</p>
+    `;
+    return noteCard;
+  }
+
+  function setNotesHeaderCount(count) {
+    const notesHeader = document.querySelector('.notes-header h3');
+    if (notesHeader) {
+      notesHeader.textContent = `All Notes (${count})`;
+    }
+  }
+
+  function renderNotes(notes) {
+    if (!noteList) {
+      return;
+    }
+
+    noteList.innerHTML = '';
+    if (!notes.length) {
+      noteList.innerHTML = `
+        <div class="notes-empty">
+          <p>No notes yet</p>
+          <span>Add your first observation above</span>
+        </div>
+      `;
+    } else {
+      notes.forEach(note => {
+        noteList.appendChild(buildNoteCard(note));
+      });
+    }
+
+    setNotesHeaderCount(notes.length);
+  }
+
+  function prependNote(note) {
+    if (!noteList) {
+      return;
+    }
+
+    const emptyState = noteList.querySelector('.notes-empty');
+    if (emptyState) {
+      emptyState.remove();
+    }
+
+    noteList.insertBefore(buildNoteCard(note), noteList.firstChild);
+
+    const currentCount = parseInt((document.querySelector('.notes-header h3') || {}).textContent?.match(/\d+/)?.[0] || '0', 10);
+    setNotesHeaderCount(currentCount + 1);
+  }
+
+  async function refreshNotes() {
+    if (!noteList) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/interviews/${interviewId}/notes`, { cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok || payload.status !== 'ok') {
+        throw new Error('Failed to fetch notes');
+      }
+
+      renderNotes(payload.notes || []);
+      bindDeleteHandlers();
+    } catch (error) {
+      console.error('Error refreshing notes:', error);
+    }
+  }
+
+  function bindDeleteHandlers() {
+    if (isLocked || !noteList) {
+      return;
+    }
+
+    noteList.querySelectorAll('.note-delete').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        const noteId = e.currentTarget.dataset.noteId;
+        if (!noteId) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/interviews/${interviewId}/notes/${noteId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            await refreshNotes();
+          } else {
+            console.error('Error deleting note');
+          }
+        } catch (error) {
+          console.error('Error deleting note:', error);
+        }
+      });
+    });
+  }
+
+  // Generate summary handler
+  document.getElementById('generate-summary').addEventListener('click', async () => {
+    const button = document.getElementById('generate-summary');
+    const status = document.getElementById('summary-status');
+    
+    button.disabled = true;
+    button.innerHTML = '<span>Generating...</span>';
+    status.innerHTML = '<div class="loading">Generating summary...</div>';
+    
+    try {
+      const response = await fetch(`/api/interviews/${interviewId}/generate_summary`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        status.innerHTML = '<div class="success">Summary generated successfully!</div>';
+        setTimeout(() => {
+          window.location.href = `/interviews/${interviewId}/summary`;
+        }, 1000);
+      } else {
+        status.innerHTML = '<div class="error">Error generating summary. Please try again.</div>';
+        button.disabled = false;
+        button.innerHTML = '<span>Generate Summary</span>';
+      }
+    } catch (error) {
+      status.innerHTML = '<div class="error">Error generating summary. Please try again.</div>';
+      button.disabled = false;
+      button.innerHTML = '<span>Generate Summary</span>';
+    }
+  });
+</script>
+{% endblock %}
