@@ -40,6 +40,8 @@ def dashboard():
     role_filter = request.args.get("role", "").strip()
     recommendation_filter = request.args.get("recommendation", "").strip()
     sort_filter = request.args.get("sort", "").strip()
+    completed_page = request.args.get("completed_page", "1").strip()
+    per_page = 6
 
     interviews = Interview.query.order_by(Interview.created_at.desc()).all()
     if role_filter:
@@ -61,11 +63,25 @@ def dashboard():
 
     ongoing_interviews = [i for i in interviews if i.status != "completed"]
     completed_interviews = [i for i in interviews if i.status == "completed"]
+    completed_total_count = len(completed_interviews)
+    try:
+        completed_page = max(1, int(completed_page))
+    except ValueError:
+        completed_page = 1
+    completed_total_pages = max(1, (completed_total_count + per_page - 1) // per_page)
+    if completed_page > completed_total_pages:
+        completed_page = completed_total_pages
+    completed_start = (completed_page - 1) * per_page
+    completed_end = completed_start + per_page
+    completed_interviews_page = completed_interviews[completed_start:completed_end]
     question_bank = load_question_bank()
     return render_template(
         "dashboard.html",
         ongoing_interviews=ongoing_interviews,
-        completed_interviews=completed_interviews,
+        completed_interviews=completed_interviews_page,
+        completed_total_count=completed_total_count,
+        completed_page=completed_page,
+        completed_total_pages=completed_total_pages,
         skill_scores=skill_scores,
         default_skills=sorted(question_bank.keys()),
         role_filter=role_filter,

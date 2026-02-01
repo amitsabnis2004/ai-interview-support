@@ -11,11 +11,11 @@
       <div class="stat-label">Ongoing</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value">{{ completed_interviews|length }}</div>
+      <div class="stat-value">{{ completed_total_count }}</div>
       <div class="stat-label">Completed</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value">{{ (ongoing_interviews|length + completed_interviews|length) }}</div>
+      <div class="stat-value">{{ (ongoing_interviews|length + completed_total_count) }}</div>
       <div class="stat-label">Total</div>
     </div>
   </div>
@@ -55,11 +55,11 @@
         <h3 class="form-section-title">Candidate Information</h3>
         <label>
           Candidate name
-          <input type="text" name="name" placeholder="John Doe" required />
+          <input type="text" name="name" placeholder="Name" required />
         </label>
         <label>
           Email
-          <input type="email" name="email" placeholder="john.doe@example.com" required />
+          <input type="email" name="email" placeholder="Email" required />
         </label>
       </div>
       
@@ -223,7 +223,7 @@
     <div class="stack interview-section">
       <div class="section-header">
         <h3>Completed Interviews</h3>
-        <span class="section-count">{{ completed_interviews|length }}</span>
+        <span class="section-count">{{ completed_total_count }}</span>
       </div>
       {% if completed_interviews %}
         <ul class="list interview-list">
@@ -232,7 +232,12 @@
               <div class="interview-info">
                 <div class="interview-main">
                   <strong class="candidate-name">{{ interview.candidate.name }}</strong>
-                  <span class="interview-status status-completed">Completed</span>
+                  <div class="status-group">
+                    <span class="interview-status status-completed">Completed</span>
+                    {% if interview.recommendation %}
+                      <span class="interview-status status-recommendation status-{{ interview.recommendation.lower().replace(' ', '-') }}">{{ interview.recommendation }}</span>
+                    {% endif %}
+                  </div>
                 </div>
                 <div class="interview-meta">
                   <span class="meta-item">{{ interview.candidate.role }}</span>
@@ -251,6 +256,21 @@
             </li>
           {% endfor %}
         </ul>
+        {% if completed_total_pages > 1 %}
+          <div class="pagination">
+            {% if completed_page > 1 %}
+              <a class="pagination-link" href="{{ url_for('main.dashboard', role=role_filter, recommendation=recommendation_filter, sort=sort_filter, completed_page=completed_page-1) }}">Previous</a>
+            {% else %}
+              <span class="pagination-link is-disabled">Previous</span>
+            {% endif %}
+            <span class="pagination-status">Page {{ completed_page }} of {{ completed_total_pages }}</span>
+            {% if completed_page < completed_total_pages %}
+              <a class="pagination-link" href="{{ url_for('main.dashboard', role=role_filter, recommendation=recommendation_filter, sort=sort_filter, completed_page=completed_page+1) }}">Next</a>
+            {% else %}
+              <span class="pagination-link is-disabled">Next</span>
+            {% endif %}
+          </div>
+        {% endif %}
       {% else %}
         <div class="empty-state">
           <p class="empty-message">No completed interviews</p>

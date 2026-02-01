@@ -1,17 +1,17 @@
 /* Import modern elegant fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
   color-scheme: light;
   
-  /* Enhanced Color Palette */
-  --bg: #0f172a;
-  --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Soft Color Palette */
+  --bg: #f1f4ff;
+  --bg-gradient: linear-gradient(135deg, #4f73ff 0%, #8b5cf6 100%);
   --bg-pattern: 
-    radial-gradient(circle at 15% 25%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 85% 75%, rgba(118, 75, 162, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
-  --bg-mesh: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e1b4b 100%);
+    radial-gradient(circle at 15% 25%, rgba(79, 115, 255, 0.22) 0%, transparent 60%),
+    radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.2) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.14) 0%, transparent 70%);
+  --bg-mesh: linear-gradient(135deg, #e9efff 0%, #eef2ff 50%, #f7f0ff 100%);
   
   /* Surface Colors with Depth */
   --surface: #ffffff;
@@ -25,14 +25,14 @@
   --muted: #a0aec0;
   
   /* Primary Brand Colors */
-  --primary: #667eea;
-  --primary-dark: #5568d3;
-  --primary-darker: #4c51bf;
-  --primary-light: #7c8ff0;
-  --primary-lighter: #a5b4fc;
-  --secondary: #eef2ff;
-  --accent: #764ba2;
-  --accent-light: #9f7aea;
+  --primary: #4f73ff;
+  --primary-dark: #3f5fe6;
+  --primary-darker: #334ecc;
+  --primary-light: #7b97ff;
+  --primary-lighter: #c3d0ff;
+  --secondary: #eaf0ff;
+  --accent: #8b5cf6;
+  --accent-light: #b794f4;
   
   /* Semantic Colors */
   --success: #10b981;
@@ -79,8 +79,8 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e1b4b 100%);
+  font-family: 'Calibri', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  background: var(--bg-mesh);
   background-attachment: fixed;
   background-size: 100% 100%;
   color: var(--text);
@@ -102,9 +102,9 @@ body::before {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(circle at 15% 25%, rgba(102, 126, 234, 0.2) 0%, transparent 55%),
-    radial-gradient(circle at 85% 75%, rgba(118, 75, 162, 0.18) 0%, transparent 55%),
-    radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 75%);
+    radial-gradient(circle at 15% 25%, rgba(79, 115, 255, 0.22) 0%, transparent 60%),
+    radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.2) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.14) 0%, transparent 75%);
   pointer-events: none;
   z-index: 0;
   animation: pulseGlow 15s ease-in-out infinite;
@@ -126,7 +126,7 @@ body::after {
   right: -50%;
   width: 120%;
   height: 120%;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.18) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(79, 115, 255, 0.18) 0%, transparent 70%);
   animation: floatBackground 25s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
@@ -233,14 +233,11 @@ body::after {
 }
 
 .logo-text {
-  background: var(--bg-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.03em;
-  font-family: 'Playfair Display', serif;
-  font-weight: 800;
-  font-size: 1.35rem;
+  color: var(--primary-dark);
+  letter-spacing: -0.02em;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 1.25rem;
 }
 
 .main-nav {
@@ -443,13 +440,9 @@ body::after {
 
 .footer-brand {
   font-weight: 800;
-  color: var(--text);
+  color: var(--primary-dark);
   font-size: 1.125rem;
-  font-family: 'Playfair Display', serif;
-  background: var(--bg-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-family: inherit;
 }
 
 .footer-version {
@@ -543,13 +536,10 @@ body::after {
 
 .panel h1 {
   font-size: 1.4rem;
-  letter-spacing: -0.03em;
-  font-family: 'Playfair Display', serif;
-  font-weight: 800;
-  background: var(--bg-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: -0.02em;
+  font-family: inherit;
+  font-weight: 700;
+  color: var(--text);
   margin-bottom: 0.5rem;
 }
 
@@ -562,8 +552,8 @@ body::after {
 
 .panel h2 {
   font-size: 1.2rem;
-  letter-spacing: -0.025em;
-  font-family: 'Playfair Display', serif;
+  letter-spacing: -0.02em;
+  font-family: inherit;
 }
 
 .panel h3 {
@@ -1813,6 +1803,50 @@ html {
   gap: 1.5rem;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-xs);
+}
+
+.pagination-link {
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--primary);
+  background: var(--secondary);
+  border: 1px solid transparent;
+  transition: var(--transition-fast);
+}
+
+.pagination-link:hover {
+  border-color: var(--primary-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.pagination-link.is-disabled {
+  color: var(--muted);
+  background: #f7f7fb;
+  border-color: var(--border-light);
+  pointer-events: none;
+}
+
+.pagination-status {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 .interview-card {
   display: grid !important;
   grid-template-columns: auto 1fr auto auto !important;
@@ -1880,6 +1914,26 @@ html {
   grid-column: 1 !important;
   grid-row: 2 !important;
   justify-self: start !important;
+  min-width: 120px !important;
+  width: 120px !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.status-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+}
+
+.status-recommendation {
+  text-transform: none !important;
+  letter-spacing: 0.02em !important;
 }
 
 .status-ongoing {
@@ -1888,8 +1942,23 @@ html {
 }
 
 .status-completed {
-  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-  color: #744210;
+  background: linear-gradient(135deg, #b7f7d1 0%, #6ee7b7 100%);
+  color: #064e3b;
+}
+
+.status-hire {
+  background: linear-gradient(135deg, #bbf7d0 0%, #34d399 100%);
+  color: #065f46;
+}
+
+.status-borderline {
+  background: linear-gradient(135deg, #fde68a 0%, #f59e0b 100%);
+  color: #78350f;
+}
+
+.status-no-hire {
+  background: linear-gradient(135deg, #fca5a5 0%, #ef4444 100%);
+  color: #7f1d1d;
 }
 
 .interview-meta {
@@ -3184,12 +3253,9 @@ html {
   margin: 0;
   font-size: 0.75rem !important;
   font-weight: 800 !important;
-  font-family: 'Playfair Display', serif !important;
-  background: var(--bg-gradient) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-  letter-spacing: -0.03em !important;
+  font-family: inherit !important;
+  color: var(--text) !important;
+  letter-spacing: -0.02em !important;
   line-height: 1;
 }
 
@@ -3809,17 +3875,18 @@ html {
 }
 
 .score-bar-large {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(79, 115, 255, 0.18);
   border-radius: 10px;
   height: 12px;
   overflow: hidden;
   position: relative;
   margin-bottom: 0.75rem;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 .score-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  background: linear-gradient(90deg, var(--primary), var(--accent));
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -3827,6 +3894,7 @@ html {
   padding-right: 0.5rem;
   transition: width 0.5s ease;
   position: relative;
+  min-width: 24px;
 }
 
 .score-percentage {
@@ -4582,12 +4650,9 @@ html {
 .panel.question-bank-header h1 {
   font-size: 1.4rem !important;
   font-weight: 800 !important;
-  font-family: 'Playfair Display', serif !important;
-  background: var(--bg-gradient) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-  letter-spacing: -0.03em !important;
+  font-family: inherit !important;
+  color: var(--text) !important;
+  letter-spacing: -0.02em !important;
   margin-bottom: 0.5rem !important;
 }
 
@@ -4595,12 +4660,9 @@ html {
 .panel-header-simple h2 {
   font-size: 1.2rem !important;
   font-weight: 800 !important;
-  font-family: 'Playfair Display', serif !important;
-  background: var(--bg-gradient) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-  letter-spacing: -0.03em !important;
+  font-family: inherit !important;
+  color: var(--text) !important;
+  letter-spacing: -0.02em !important;
 }
 
 /* SUPER SPECIFIC GRADIENT TEXT OVERRIDE */
@@ -4609,12 +4671,9 @@ section.panel.question-bank-header div h1,
 .panel.question-list-panel .panel-header-simple h2 {
   font-size: 1.4rem !important;
   font-weight: 800 !important;
-  font-family: 'Playfair Display', serif !important;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-  letter-spacing: -0.03em !important;
+  font-family: inherit !important;
+  color: var(--text) !important;
+  letter-spacing: -0.02em !important;
   margin-bottom: 0.5rem !important;
 }
 
