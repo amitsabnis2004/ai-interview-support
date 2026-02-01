@@ -22,6 +22,51 @@ def _valid_payload(**overrides):
     return payload
 
 
+def _create_interview(client, **overrides) -> int:
+    response = client.post("/interviews", data=_valid_payload(**overrides))
+    assert response.status_code == 302
+    return extract_interview_id(response.headers["Location"])
+
+
+def _complete_interview(client, interview_id: int) -> None:
+    end_response = client.post(f"/interviews/{interview_id}/end")
+    assert end_response.status_code == 302
+
+
+def test_completed_interview_shows_hire_status_pill(client, app):
+    interview_id = _create_interview(client)
+    _complete_interview(client, interview_id)
+
+    with app.app_context():
+        interview = db.session.get(Interview, interview_id)
+        interview.recommendation = "Hire"
+        db.session.commit()
+
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"status-hire" in response.data
+    assert b">Hire<" in response.data
+
+
+def test_completed_interview_without_recommendation_hides_status_pill(client):
+    interview_id = _create_interview(client, email="asha.no.rec@example.com")
+    _complete_interview(client, interview_id)
+
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"status-recommendation" not in response.data
+
+
+def test_completed_pagination_edge_page_out_of_range(client):
+    for index in range(7):
+        interview_id = _create_interview(client, email=f"asha{index}@example.com")
+        _complete_interview(client, interview_id)
+
+    response = client.get("/?completed_page=999")
+    assert response.status_code == 200
+    assert b"Page 2 of 2" in response.data
+
+
 def test_dashboard_loads(client):
     response = client.get("/")
     assert response.status_code == 200
@@ -50,7 +95,7 @@ def test_summary_blocked_until_completed(client):
 
     summary = client.get(f"/interviews/{interview_id}/summary")
     assert summary.status_code == 200
-    assert b"Summary is available only after the interview is completed" in summary.data
+    assert b"Summary and results will be available once the interview is marked as completed." in summary.data
 
 
 def test_end_interview_and_generate_summary(client, app):
@@ -183,4 +228,4 @@ def test_summary_shows_only_asked_questions(client, app):
     client.post(f"/interviews/{interview_id}/end")
     summary = client.get(f"/interviews/{interview_id}/summary")
     assert summary.status_code == 200
-    assert b"Asked Questions" in summary.data
+    assert b"Questions Asked" in summary.data
