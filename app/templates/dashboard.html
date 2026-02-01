@@ -1,116 +1,157 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="panel">
-  <h1>Interviewer Dashboard</h1>
-  <p>Create a new interview session or resume a previous one.</p>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.5rem; background: white; border-radius: 12px; margin-bottom: 0.8rem;">
+  <div>
+    <h1 style="margin: 0; font-size: 1.4rem; color: #1a202c;">Interviewer Dashboard</h1>
+    <p style="margin: 0.2rem 0 0 0; color: #718096; font-size: 0.85rem;">Manage your technical interviews with ease</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <div class="stat-card">
+      <div class="stat-value">{{ ongoing_interviews|length }}</div>
+      <div class="stat-label">Ongoing</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ completed_total_count }}</div>
+      <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ (ongoing_interviews|length + completed_total_count) }}</div>
+      <div class="stat-label">Total</div>
+    </div>
+  </div>
+</div>
   {% if error %}
     <div class="alert">
-      {% if error == 'duplicate' %}
-        A candidate with this email already exists.
-      {% elif error == 'invalid_email' %}
-        Please enter a valid email address.
-      {% elif error == 'missing' %}
-        Please complete all required fields.
-      {% elif error == 'invalid_branch' %}
-        Please select a valid branch/department.
-      {% elif error == 'invalid_degree' %}
-        Please select a valid degree.
-      {% elif error == 'invalid_year' %}
-        Please select a valid year.
-      {% else %}
-        Unable to create interview. Please review the form.
-      {% endif %}
+      <span class="alert-icon">⚠</span>
+      <span class="alert-message">
+        {% if error == 'duplicate' %}
+          A candidate with this email already exists.
+        {% elif error == 'invalid_email' %}
+          Please enter a valid email address.
+        {% elif error == 'missing' %}
+          Please complete all required fields.
+        {% elif error == 'invalid_branch' %}
+          Please select a valid branch/department.
+        {% elif error == 'invalid_degree' %}
+          Please select a valid degree.
+        {% elif error == 'invalid_year' %}
+          Please select a valid year.
+        {% else %}
+          Unable to create interview. Please review the form.
+        {% endif %}
+      </span>
     </div>
   {% endif %}
 </section>
 
 <section class="grid two">
-  <div class="panel">
-    <h2>New Interview</h2>
-    <form action="{{ url_for('main.create_interview') }}" method="post" class="form">
-      <label>
-        Candidate name
-        <input type="text" name="name" required />
-      </label>
-      <label>
-        Email
-        <input type="email" name="email" required />
-      </label>
-      <label>
-        Branch/Department
-        <select name="branch" required>
-          <option value="">Select branch</option>
-          {% for branch in default_branches %}
-            <option value="{{ branch }}">{{ branch }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
-        Degree
-        <select name="degree" required>
-          <option value="">Select degree</option>
-          {% for degree in default_degrees %}
-            <option value="{{ degree }}">{{ degree }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
-        Year
-        <select name="year" required>
-          <option value="">Select year</option>
-          {% for year in default_years %}
-            <option value="{{ year }}">{{ year }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
-        Role applied for
-        <select name="role" id="role-select" required>
-          <option value="">Select role</option>
-          {% for role in default_roles %}
-            <option value="{{ role }}">{{ role }}</option>
-          {% endfor %}
-          <option value="other">Other</option>
-        </select>
-      </label>
-      <label id="custom-role-field" class="hidden">
-        Custom role
-        <input type="text" name="custom_role" placeholder="Role title" disabled />
-      </label>
-      <label>
-        Select skills
-        <div class="checkbox-grid">
-          {% for skill in default_skills %}
-            <label class="checkbox">
-              <input type="checkbox" name="skills" value="{{ skill }}" checked />
-              {{ skill }}
-            </label>
-          {% endfor %}
+  <div class="panel form-panel">
+    <div class="panel-header">
+      <h2>New Interview</h2>
+      <p class="panel-subtitle">Start a new interview session</p>
+    </div>
+    <form action="{{ url_for('main.create_interview') }}" method="post" class="form interview-form">
+      <div class="form-section">
+        <h3 class="form-section-title">Candidate Information</h3>
+        <label>
+          Candidate name
+          <input type="text" name="name" placeholder="Name" required />
+        </label>
+        <label>
+          Email
+          <input type="email" name="email" placeholder="Email" required />
+        </label>
+      </div>
+      
+      <div class="form-section">
+        <h3 class="form-section-title">Academic Details</h3>
+        <div class="form-grid">
+          <label>
+            Branch/Department
+            <select name="branch" required>
+              <option value="">Select branch</option>
+              {% for branch in default_branches %}
+                <option value="{{ branch }}">{{ branch }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Degree
+            <select name="degree" required>
+              <option value="">Select degree</option>
+              {% for degree in default_degrees %}
+                <option value="{{ degree }}">{{ degree }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Year
+            <select name="year" required>
+              <option value="">Select year</option>
+              {% for year in default_years %}
+                <option value="{{ year }}">{{ year }}</option>
+              {% endfor %}
+            </select>
+          </label>
         </div>
-      </label>
-      <label>
-        Custom skills (comma-separated)
-        <input type="text" name="custom_skills" placeholder="Security, Data Engineering" />
-      </label>
-      <label>
-        Assignment score (0-100)
-        <input type="number" name="assignment_score" min="0" max="100" />
-      </label>
-      <label>
-        Assignment remarks
-        <textarea name="assignment_remarks" rows="3"></textarea>
-      </label>
-      <label>
-        Optional transcript (paste)
-        <textarea name="transcript" rows="4" placeholder="Paste interview transcript"></textarea>
-      </label>
-      <button type="submit" class="primary">Start Interview</button>
+      </div>
+      <div class="form-section">
+        <h3 class="form-section-title">Role & Skills</h3>
+        <label>
+          Role applied for
+          <select name="role" id="role-select" required>
+            <option value="">Select role</option>
+            {% for role in default_roles %}
+              <option value="{{ role }}">{{ role }}</option>
+            {% endfor %}
+            <option value="other">Other</option>
+          </select>
+        </label>
+        <label id="custom-role-field" class="hidden">
+          Custom role
+          <input type="text" name="custom_role" placeholder="Enter custom role title" />
+        </label>
+        <label>
+          Select skills
+          <div class="checkbox-grid">
+            {% for skill in default_skills %}
+              <label class="checkbox">
+                <input type="checkbox" name="skills" value="{{ skill }}" checked />
+                {{ skill }}
+              </label>
+            {% endfor %}
+          </div>
+        </label>
+        <label>
+          Custom skills (comma-separated)
+          <input type="text" name="custom_skills" placeholder="e.g., Security, Data Engineering, Cloud" />
+        </label>
+      </div>
+      <div class="form-section">
+        <h3 class="form-section-title">Additional Information (Optional)</h3>
+        <label>
+          Assignment score (0-100)
+          <input type="number" name="assignment_score" min="0" max="100" placeholder="85" />
+        </label>
+        <label>
+          Assignment remarks
+          <textarea name="assignment_remarks" rows="3" placeholder="Brief evaluation of the assignment submission..."></textarea>
+        </label>
+        <label>
+          Interview transcript
+          <textarea name="transcript" rows="4" placeholder="Paste interview transcript or notes here..."></textarea>
+        </label>
+      </div>
+      <button type="submit" class="primary btn-large">Create & Start Interview</button>
     </form>
   </div>
 
-  <div class="panel">
-    <h2>Recent Interviews</h2>
-    <form class="filters" method="get" action="{{ url_for('main.dashboard') }}">
+  <div class="panel interviews-panel">
+    <div class="panel-header">
+      <h2>Interview History</h2>
+      <p class="panel-subtitle">View and manage your interviews</p>
+    </div>
+    <form id="filters-form" class="filters" method="get" action="{{ url_for('main.dashboard') }}">
       <label>
         Role
         <select name="role">
@@ -137,51 +178,104 @@
           <option value="skill_desc" {% if sort_filter == 'skill_desc' %}selected{% endif %}>Skill score (High → Low)</option>
         </select>
       </label>
-      <button class="secondary" type="submit">Apply</button>
     </form>
+    <div style="text-align: center;">
+      <button class="primary filters-apply-btn" type="submit" form="filters-form">Apply</button>
+    </div>
 
-    <div class="stack">
-      <h3>Ongoing Interviews</h3>
+    <div class="stack interview-section">
+      <div class="section-header">
+        <h3>Ongoing Interviews</h3>
+        <span class="section-count">{{ ongoing_interviews|length }}</span>
+      </div>
       {% if ongoing_interviews %}
-        <ul class="list">
+        <ul class="list interview-list">
           {% for interview in ongoing_interviews %}
-            <li>
-              <div>
-                <strong>{{ interview.candidate.name }}</strong>
-                <span class="muted">{{ interview.candidate.role }}</span>
-                <span class="badge">Score: {{ '%.1f'|format(skill_scores.get(interview.id, 0)) }}</span>
+            <li class="interview-card ongoing">
+              <div class="interview-info">
+                <div class="interview-main">
+                  <strong class="candidate-name">{{ interview.candidate.name }}</strong>
+                  <span class="interview-status status-ongoing" style="display: inline-block; margin-top: 8px;">In Progress</span>
+                </div>
+                <div class="interview-meta" style="margin-top: 12px;">
+                  <span class="meta-item">{{ interview.candidate.role }}</span>
+                  <span class="meta-divider">•</span>
+                  <span class="meta-item">{{ interview.candidate.branch }}</span>
+                </div>
               </div>
-              <div class="actions">
-                <a class="link" href="{{ url_for('main.live_interview', interview_id=interview.id) }}">Resume</a>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 16px;">
+                <span class="badge badge-score" style="flex: 0 0 auto;">Avg Score: {{ '%.1f'|format(skill_scores.get(interview.id, 0)) }}/5</span>
+                <div class="interview-actions">
+                  <a class="btn-action primary" href="{{ url_for('main.live_interview', interview_id=interview.id) }}">Resume Interview</a>
+                </div>
               </div>
             </li>
           {% endfor %}
         </ul>
       {% else %}
-        <p class="muted">No ongoing interviews.</p>
+        <div class="empty-state">
+          <p class="empty-message">No ongoing interviews</p>
+          <p class="empty-hint">Start a new interview to see it here</p>
+        </div>
       {% endif %}
     </div>
 
-    <div class="stack">
-      <h3>Completed Interviews</h3>
+    <div class="stack interview-section">
+      <div class="section-header">
+        <h3>Completed Interviews</h3>
+        <span class="section-count">{{ completed_total_count }}</span>
+      </div>
       {% if completed_interviews %}
-        <ul class="list">
+        <ul class="list interview-list">
           {% for interview in completed_interviews %}
-            <li>
-              <div>
-                <strong>{{ interview.candidate.name }}</strong>
-                <span class="muted">{{ interview.candidate.role }}</span>
-                <span class="badge">Score: {{ '%.1f'|format(skill_scores.get(interview.id, 0)) }}</span>
+            <li class="interview-card completed">
+              <div class="interview-info">
+                <div class="interview-main">
+                  <strong class="candidate-name">{{ interview.candidate.name }}</strong>
+                  <div class="status-group">
+                    <span class="interview-status status-completed">Completed</span>
+                    {% if interview.recommendation %}
+                      <span class="interview-status status-recommendation status-{{ interview.recommendation.lower().replace(' ', '-') }}">{{ interview.recommendation }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="interview-meta">
+                  <span class="meta-item">{{ interview.candidate.role }}</span>
+                  <span class="meta-divider">•</span>
+                  <span class="meta-item">{{ interview.candidate.branch }}</span>
+                  {% if interview.recommendation %}
+                    <span class="meta-divider">•</span>
+                    <span class="meta-item recommendation-{{ interview.recommendation.lower().replace(' ', '-') }}">{{ interview.recommendation }}</span>
+                  {% endif %}
+                </div>
               </div>
-              <div class="actions">
-                <span class="muted">Completed</span>
-                <a class="link" href="{{ url_for('main.summary', interview_id=interview.id) }}">Summary</a>
+              <span class="badge badge-score">Avg Score: {{ '%.1f'|format(skill_scores.get(interview.id, 0)) }}/5</span>
+              <div class="interview-actions">
+                <a class="btn-action secondary" href="{{ url_for('main.summary', interview_id=interview.id) }}">View Summary</a>
               </div>
             </li>
           {% endfor %}
         </ul>
+        {% if completed_total_pages > 1 %}
+          <div class="pagination">
+            {% if completed_page > 1 %}
+              <a class="pagination-link" href="{{ url_for('main.dashboard', role=role_filter, recommendation=recommendation_filter, sort=sort_filter, completed_page=completed_page-1) }}">Previous</a>
+            {% else %}
+              <span class="pagination-link is-disabled">Previous</span>
+            {% endif %}
+            <span class="pagination-status">Page {{ completed_page }} of {{ completed_total_pages }}</span>
+            {% if completed_page < completed_total_pages %}
+              <a class="pagination-link" href="{{ url_for('main.dashboard', role=role_filter, recommendation=recommendation_filter, sort=sort_filter, completed_page=completed_page+1) }}">Next</a>
+            {% else %}
+              <span class="pagination-link is-disabled">Next</span>
+            {% endif %}
+          </div>
+        {% endif %}
       {% else %}
-        <p class="muted">No completed interviews.</p>
+        <div class="empty-state">
+          <p class="empty-message">No completed interviews</p>
+          <p class="empty-hint">Completed interviews will appear here</p>
+        </div>
       {% endif %}
     </div>
   </div>

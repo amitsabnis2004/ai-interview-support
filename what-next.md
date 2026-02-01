@@ -30,3 +30,10 @@
 # LLM
 - Parsing not done properly for the response received by the LLM
 - hugging face has limit issues
+
+# v 0.1.2
+## Frontend
+- Paging for completed interviews on the main page
+- Font changes to calibri
+- Color Palette should be much smoother
+- change the design feel to much smoother colours and shapes for a better viewing experiance

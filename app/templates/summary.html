@@ -1,86 +1,155 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="panel">
-  <h1>Summary & Results</h1>
-  <p class="muted">{{ interview.candidate.name }} · {{ interview.candidate.role }}</p>
+<section class="panel summary-header">
+  <div class="summary-header-content">
+    <div class="candidate-profile-summary">
+      <div class="candidate-avatar-large">
+        <span class="avatar-initial-large">{{ interview.candidate.name[0] }}</span>
+      </div>
+      <div class="candidate-details-summary">
+        <h1>{{ interview.candidate.name }}</h1>
+        <div class="candidate-meta-info">
+          <span class="meta-item">{{ interview.candidate.role }}</span>
+          <span class="meta-divider">•</span>
+          <span class="meta-item">{{ interview.candidate.college }}</span>
+          <span class="meta-divider">•</span>
+          <span class="meta-item">{{ interview.candidate.degree }}</span>
+        </div>
+        <div class="status-badges">
+          {% if interview.status == 'completed' %}
+            <span class="badge-status badge-completed">Completed</span>
+          {% elif interview.status == 'ongoing' %}
+            <span class="badge-status badge-ongoing">Ongoing</span>
+          {% else %}
+            <span class="badge-status badge-pending">Pending</span>
+          {% endif %}
+          <span class="badge-info">{{ interview.date }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 {% if blocked %}
-  <section class="panel">
-    <p class="alert">Summary is available only after the interview is completed.</p>
-    <div class="actions">
-      <a class="primary" href="{{ url_for('main.live_interview', interview_id=interview.id) }}">Return to Interview</a>
+  <section class="panel blocked-state">
+    <div class="blocked-content">
+      <div class="blocked-icon">⏸️</div>
+      <h2 class="blocked-title">Interview In Progress</h2>
+      <p class="blocked-message">Summary and results will be available once the interview is marked as completed.</p>
+      <div class="actions-center">
+        <a class="btn-primary-large" href="{{ url_for('main.live_interview', interview_id=interview.id) }}">Continue Interview</a>
+      </div>
     </div>
   </section>
 {% else %}
 <section class="grid two">
-  <div class="panel">
-    <h2>Scores</h2>
-    <table class="score-table">
-      <thead>
-        <tr>
-          <th>Skill</th>
-          <th>Score</th>
-          <th>Visual</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for score in scores %}
-          <tr>
-            <td>{{ score.skill }}</td>
-            <td>{{ score.value }}/5</td>
-            <td>
-              <div class="score-bar">
-                <span style="width: {{ (score.value / 5) * 100 }}%"></span>
-              </div>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <h3>Asked Questions</h3>
-    <div class="note-list">
-      {% for question in asked_questions %}
-        <div class="note-card">
-          <div class="note-meta">
-            <span class="pill">{{ question.skill }}</span>
-            <span class="tag">Asked</span>
+  <div class="panel scores-panel">
+    <div class="panel-header-with-icon">
+      <h2>Skill Assessment</h2>
+      <span class="scores-count">{{ scores|length }} skills evaluated</span>
+    </div>
+    <div class="scores-grid">
+      {% for score in scores %}
+        <div class="score-card-detailed">
+          <div class="score-card-header">
+            <span class="skill-name-large">{{ score.skill }}</span>
+            <span class="score-value-display">{{ score.value }}<span class="score-max">/5</span></span>
           </div>
-          <p>{{ question.text }}</p>
-          <p class="muted">Note: {{ question.note or 'No note added.' }}</p>
+          <div class="score-bar-large">
+            <div class="score-bar-fill" style="width: {{ (score.value / 5) * 100 }}%">
+              <span class="score-percentage">{{ ((score.value / 5) * 100)|int }}%</span>
+            </div>
+          </div>
+          <div class="score-rating">
+            {% if score.value >= 4 %}
+              <span class="rating-label rating-excellent">Excellent</span>
+            {% elif score.value >= 3 %}
+              <span class="rating-label rating-good">Good</span>
+            {% elif score.value >= 2 %}
+              <span class="rating-label rating-average">Average</span>
+            {% else %}
+              <span class="rating-label rating-needs-improvement">Needs Improvement</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="panel-header-with-icon" style="margin-top: 2rem;">
+      <h2>Questions Asked</h2>
+      <span class="scores-count">{{ asked_questions|length }} questions</span>
+    </div>
+    <div class="questions-asked-list">
+      {% for question in asked_questions %}
+        <div class="question-card-summary">
+          <div class="question-card-header-summary">
+            <span class="skill-badge-summary">{{ question.skill }}</span>
+            <span class="asked-indicator">✓ Asked</span>
+          </div>
+          <p class="question-text-summary">{{ question.text }}</p>
+          {% if question.note %}
+            <div class="question-note-summary">
+              <span class="note-label">Note:</span>
+              <span class="note-text">{{ question.note }}</span>
+            </div>
+          {% else %}
+            <p class="no-note">No notes recorded</p>
+          {% endif %}
         </div>
       {% endfor %}
       {% if not asked_questions %}
-        <p class="muted">No asked questions recorded.</p>
+        <div class="empty-state-small">
+          <p class="empty-text">No questions were marked as asked during this interview.</p>
+        </div>
       {% endif %}
     </div>
   </div>
 
-  <div class="panel">
-    <h2>Generated Summary</h2>
-    <form action="{{ url_for('main.save_summary', interview_id=interview.id) }}" method="post" class="form">
-      <label>
-        Summary (editable)
-        <textarea name="summary" rows="8">{{ interview.summary or '' }}</textarea>
-      </label>
-      <label>
-        Recommendation
-        <select name="recommendation">
-          {% set current = interview.recommendation or '' %}
-          <option value="Hire" {% if current == 'Hire' %}selected{% endif %}>Hire</option>
-          <option value="Borderline" {% if current == 'Borderline' %}selected{% endif %}>Borderline</option>
-          <option value="No Hire" {% if current == 'No Hire' %}selected{% endif %}>No Hire</option>
-        </select>
-      </label>
-      <label>
-        Recommendation justification
-        <textarea name="recommendation_reason" rows="3">{{ interview.recommendation_reason or '' }}</textarea>
-      </label>
-      <div class="actions">
-        <button type="submit" class="primary">Save Summary</button>
-        <a class="secondary" href="{{ url_for('main.export_interview', interview_id=interview.id) }}">Export JSON</a>
-        <a class="secondary" href="{{ url_for('main.export_interview_pdf', interview_id=interview.id) }}">Export PDF</a>
+  <div class="panel summary-form-panel">
+    <div class="panel-header-with-icon">
+      <h2>Interview Summary & Decision</h2>
+      <span class="edit-hint">Editable</span>
+    </div>
+    <form action="{{ url_for('main.save_summary', interview_id=interview.id) }}" method="post" class="form summary-form">
+      <div class="form-section-summary">
+        <h3 class="section-title-small">Overall Summary</h3>
+        <label>
+          <span class="label-text">Summary</span>
+          <textarea name="summary" rows="8" placeholder="Provide a comprehensive summary of the candidate's performance, strengths, and areas for improvement...">{{ interview.summary or '' }}</textarea>
+        </label>
+      </div>
+      
+      <div class="form-section-summary recommendation-section">
+        <h3 class="section-title-small">Final Recommendation</h3>
+        <div class="recommendation-grid">
+          <label>
+            <span class="label-text">Hiring Decision</span>
+            <select name="recommendation" class="recommendation-select">
+              {% set current = interview.recommendation or '' %}
+              <option value="Hire" {% if current == 'Hire' %}selected{% endif %}>✓ Hire</option>
+              <option value="Borderline" {% if current == 'Borderline' %}selected{% endif %}>~ Borderline</option>
+              <option value="No Hire" {% if current == 'No Hire' %}selected{% endif %}>✗ No Hire</option>
+            </select>
+          </label>
+          {% if interview.recommendation %}
+            <div class="current-recommendation">
+              <span class="rec-label">Current:</span>
+              <span class="rec-badge rec-{{ interview.recommendation|lower|replace(' ', '-') }}">{{ interview.recommendation }}</span>
+            </div>
+          {% endif %}
+        </div>
+        <label>
+          <span class="label-text">Justification</span>
+          <textarea name="recommendation_reason" rows="4" placeholder="Explain the reasoning behind your recommendation...">{{ interview.recommendation_reason or '' }}</textarea>
+        </label>
+      </div>
+      
+      <div class="actions-summary">
+        <button type="submit" class="btn-save-large">Save Summary</button>
+        <div class="export-actions">
+          <a class="btn-export" href="{{ url_for('main.export_interview', interview_id=interview.id) }}">Export JSON</a>
+          <a class="btn-export btn-export-pdf" href="{{ url_for('main.export_interview_pdf', interview_id=interview.id) }}">Export PDF</a>
+        </div>
       </div>
     </form>
   </div>
