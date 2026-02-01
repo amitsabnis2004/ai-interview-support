@@ -159,7 +159,12 @@
                   <span class="pill pill-skill">{{ note.skill }}</span>
                   <span class="tag tag-{{ note.tag.lower().replace(' ', '-') }}">{{ note.tag }}</span>
                 </div>
-                <span class="note-time">{{ note.timestamp.strftime('%H:%M') }}</span>
+                <div class="note-actions">
+                  <span class="note-time">{{ note.timestamp.strftime('%H:%M') }}</span>
+                  {% if interview.status != 'completed' %}
+                    <button class="note-delete" type="button" data-note-id="{{ note.id }}" aria-label="Delete note">✕</button>
+                  {% endif %}
+                </div>
               </div>
               <p class="note-content">{{ note.text }}</p>
             </div>
@@ -254,6 +259,100 @@
     updateTimer();
   }
 
+  let noteForm;
+  let noteList;
+  let skillSelect;
+  let customSkillField;
+
+  const questionCacheKey = `interview:${interviewId}:questions`;
+
+  function loadQuestionCache() {
+    try {
+      return JSON.parse(localStorage.getItem(questionCacheKey) || '{}');
+    } catch (error) {
+      console.error('Error reading question cache:', error);
+      return {};
+    }
+  }
+
+  function saveQuestionCache(cache) {
+    try {
+      localStorage.setItem(questionCacheKey, JSON.stringify(cache));
+    } catch (error) {
+      console.error('Error saving question cache:', error);
+    }
+  }
+
+  function updateQuestionCache(questionId, patch) {
+    const cache = loadQuestionCache();
+    cache[questionId] = { ...(cache[questionId] || {}), ...patch };
+    saveQuestionCache(cache);
+  }
+
+  function seedQuestionCacheFromDom() {
+    const cache = loadQuestionCache();
+    let updated = false;
+    document.querySelectorAll('.question-item').forEach(item => {
+      const questionId = item.dataset.questionId;
+      const existing = cache[questionId] || {};
+
+      const askedToggle = item.querySelector('.asked-toggle');
+      const ratingSelect = item.querySelector('.rating-select');
+      const noteInput = item.querySelector('.question-note-input');
+
+      if (askedToggle && existing.asked === undefined) {
+        existing.asked = askedToggle.checked;
+        updated = true;
+      }
+
+      if (ratingSelect && existing.rating === undefined) {
+        existing.rating = ratingSelect.value ? parseInt(ratingSelect.value, 10) : null;
+        updated = true;
+      }
+
+      if (noteInput && existing.note === undefined) {
+        existing.note = noteInput.value || '';
+        updated = true;
+      }
+
+      cache[questionId] = existing;
+    });
+
+    if (updated) {
+      saveQuestionCache(cache);
+    }
+  }
+
+  function applyQuestionCache() {
+    const cache = loadQuestionCache();
+    document.querySelectorAll('.question-item').forEach(item => {
+      const questionId = item.dataset.questionId;
+      const cached = cache[questionId];
+      if (!cached) {
+        return;
+      }
+
+      const askedToggle = item.querySelector('.asked-toggle');
+      if (askedToggle && typeof cached.asked === 'boolean') {
+        askedToggle.checked = cached.asked;
+        item.classList.toggle('question-asked', cached.asked);
+      }
+
+      const ratingSelect = item.querySelector('.rating-select');
+      if (ratingSelect && cached.rating !== undefined && cached.rating !== null) {
+        ratingSelect.value = String(cached.rating);
+      }
+
+      const noteInput = item.querySelector('.question-note-input');
+      if (noteInput && typeof cached.note === 'string') {
+        noteInput.value = cached.note;
+      }
+    });
+  }
+
+  seedQuestionCacheFromDom();
+  applyQuestionCache();
+
   if (!isLocked) {
     // Question asked toggle handlers
     document.querySelectorAll('.asked-toggle').forEach(checkbox => {
@@ -262,7 +361,7 @@
         const asked = e.target.checked;
         
         try {
-          const response = await fetch(`/questions/${questionId}/asked`, {
+          const response = await fetch(`/api/interviews/${interviewId}/questions/${questionId}`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({asked})
@@ -271,6 +370,7 @@
           if (response.ok) {
             const questionItem = e.target.closest('.question-item');
             questionItem.classList.toggle('question-asked', asked);
+            updateQuestionCache(questionId, { asked });
           }
         } catch (error) {
           console.error('Error updating question status:', error);
@@ -286,7 +386,7 @@
         const rating = parseInt(e.target.value) || null;
         
         try {
-          const response = await fetch(`/questions/${questionId}/rating`, {
+          const response = await fetch(`/api/interviews/${interviewId}/questions/${questionId}`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({rating})
@@ -294,6 +394,8 @@
           
           if (!response.ok) {
             console.error('Error updating question rating');
+          } else {
+            updateQuestionCache(questionId, { rating });
           }
         } catch (error) {
           console.error('Error updating question rating:', error);
@@ -302,42 +404,97 @@
     });
 
     // Note form handler
-    const noteForm = document.getElementById('note-form');
-    const noteList = document.getElementById('note-list');
-    const skillSelect = document.getElementById('note-skill-select');
-    const customSkillField = document.getElementById('custom-skill-field');
+    noteForm = document.getElementById('note-form');
+    noteList = document.getElementById('note-list');
+    skillSelect = document.getElementById('note-skill-select');
+    customSkillField = document.getElementById('custom-skill-field');
 
-    skillSelect.addEventListener('change', () => {
-      customSkillField.classList.toggle('hidden', skillSelect.value !== 'other');
-    });
+    if (skillSelect && customSkillField) {
+      skillSelect.addEventListener('change', () => {
+        customSkillField.classList.toggle('hidden', skillSelect.value !== 'other');
+      });
+    }
 
     noteForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
-      const skill = formData.get('skill') === 'other' ? formData.get('custom_skill') : formData.get('skill');
-      
+      const rawSkill = formData.get('skill');
+      const customSkill = (formData.get('custom_skill') || '').trim();
+
+      if (rawSkill === 'other' && !customSkill) {
+        alert('Please enter a custom skill.');
+        return;
+      }
       const noteData = {
-        skill: skill,
+        skill: rawSkill,
+        custom_skill: customSkill,
         tag: formData.get('tag'),
         text: formData.get('text')
       };
 
       try {
-        const response = await fetch(`/interviews/${interviewId}/notes`, {
+        const response = await fetch(`/api/interviews/${interviewId}/notes`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(noteData)
         });
 
-        if (response.ok) {
-          const note = await response.json();
-          addNoteToList(note);
+        const payload = await response.json().catch(() => null);
+        if (response.ok && payload && payload.note) {
+          prependNote(payload.note);
           e.target.reset();
-          customSkillField.classList.add('hidden');
+          if (customSkillField) {
+            customSkillField.classList.add('hidden');
+          }
+          await refreshNotes();
+        } else {
+          console.error('Error adding note:', payload);
         }
       } catch (error) {
         console.error('Error adding note:', error);
       }
+    });
+
+    // Note input autosave
+    const noteSaveTimers = new Map();
+
+    const saveNote = async (questionId, note) => {
+      try {
+        const response = await fetch(`/api/interviews/${interviewId}/questions/${questionId}`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ note })
+        });
+
+        if (!response.ok) {
+          console.error('Error updating question note');
+        }
+      } catch (error) {
+        console.error('Error updating question note:', error);
+      }
+    };
+
+    document.querySelectorAll('.question-note-input').forEach(textarea => {
+      textarea.addEventListener('input', (e) => {
+        const questionId = e.target.closest('.question-item').dataset.questionId;
+        const note = e.target.value;
+        updateQuestionCache(questionId, { note });
+
+        if (noteSaveTimers.has(questionId)) {
+          clearTimeout(noteSaveTimers.get(questionId));
+        }
+
+        noteSaveTimers.set(questionId, setTimeout(() => {
+          saveNote(questionId, note);
+        }, 500));
+      });
+
+      textarea.addEventListener('blur', (e) => {
+        const questionId = e.target.closest('.question-item').dataset.questionId;
+        const note = e.target.value;
+        updateQuestionCache(questionId, { note });
+        saveNote(questionId, note);
+      });
     });
 
     // Score select handlers
@@ -347,7 +504,7 @@
         const value = parseInt(e.target.value);
         
         try {
-          const response = await fetch(`/interviews/${interviewId}/scores`, {
+          const response = await fetch(`/api/interviews/${interviewId}/scores`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({skill, value})
@@ -364,7 +521,7 @@
     });
   }
 
-  function addNoteToList(note) {
+  function buildNoteCard(note) {
     const noteCard = document.createElement('div');
     noteCard.className = `note-card note-${note.tag.toLowerCase().replace(' ', '-')}`;
     noteCard.innerHTML = `
@@ -373,22 +530,107 @@
           <span class="pill pill-skill">${note.skill}</span>
           <span class="tag tag-${note.tag.toLowerCase().replace(' ', '-')}">${note.tag}</span>
         </div>
-        <span class="note-time">${new Date(note.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
+        <div class="note-actions">
+          <span class="note-time">${new Date(note.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
+          ${isLocked ? '' : `<button class="note-delete" type="button" data-note-id="${note.id}" aria-label="Delete note">✕</button>`}
+        </div>
       </div>
       <p class="note-content">${note.text}</p>
     `;
-    
+    return noteCard;
+  }
+
+  function setNotesHeaderCount(count) {
+    const notesHeader = document.querySelector('.notes-header h3');
+    if (notesHeader) {
+      notesHeader.textContent = `All Notes (${count})`;
+    }
+  }
+
+  function renderNotes(notes) {
+    if (!noteList) {
+      return;
+    }
+
+    noteList.innerHTML = '';
+    if (!notes.length) {
+      noteList.innerHTML = `
+        <div class="notes-empty">
+          <p>No notes yet</p>
+          <span>Add your first observation above</span>
+        </div>
+      `;
+    } else {
+      notes.forEach(note => {
+        noteList.appendChild(buildNoteCard(note));
+      });
+    }
+
+    setNotesHeaderCount(notes.length);
+  }
+
+  function prependNote(note) {
+    if (!noteList) {
+      return;
+    }
+
     const emptyState = noteList.querySelector('.notes-empty');
     if (emptyState) {
       emptyState.remove();
     }
-    
-    noteList.insertBefore(noteCard, noteList.firstChild);
-    
-    // Update notes count
-    const notesHeader = document.querySelector('.notes-header h3');
-    const currentCount = parseInt(notesHeader.textContent.match(/\d+/)[0]);
-    notesHeader.textContent = `All Notes (${currentCount + 1})`;
+
+    noteList.insertBefore(buildNoteCard(note), noteList.firstChild);
+
+    const currentCount = parseInt((document.querySelector('.notes-header h3') || {}).textContent?.match(/\d+/)?.[0] || '0', 10);
+    setNotesHeaderCount(currentCount + 1);
+  }
+
+  async function refreshNotes() {
+    if (!noteList) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/interviews/${interviewId}/notes`, { cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok || payload.status !== 'ok') {
+        throw new Error('Failed to fetch notes');
+      }
+
+      renderNotes(payload.notes || []);
+      bindDeleteHandlers();
+    } catch (error) {
+      console.error('Error refreshing notes:', error);
+    }
+  }
+
+  function bindDeleteHandlers() {
+    if (isLocked || !noteList) {
+      return;
+    }
+
+    noteList.querySelectorAll('.note-delete').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        const noteId = e.currentTarget.dataset.noteId;
+        if (!noteId) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/interviews/${interviewId}/notes/${noteId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            await refreshNotes();
+          } else {
+            console.error('Error deleting note');
+          }
+        } catch (error) {
+          console.error('Error deleting note:', error);
+        }
+      });
+    });
   }
 
   // Generate summary handler
@@ -401,7 +643,7 @@
     status.innerHTML = '<div class="loading">Generating summary...</div>';
     
     try {
-      const response = await fetch(`/interviews/${interviewId}/generate-summary`, {
+      const response = await fetch(`/api/interviews/${interviewId}/generate_summary`, {
         method: 'POST'
       });
       

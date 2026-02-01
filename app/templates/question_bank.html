@@ -3,7 +3,7 @@
 <section class="panel question-bank-header">
   <div class="header-content">
     <div>
-      <h1 style="font-family: 'Playfair Display', serif !important; font-weight: 800 !important; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; letter-spacing: -0.03em !important;">Question Bank Manager</h1>
+      <h1>Question Bank Manager</h1>
       <p class="subtitle">Organize and manage your interview questions by skill category</p>
     </div>
     <div class="bank-stats">
@@ -22,7 +22,7 @@
 <section class="grid two">
   <div class="panel add-questions-panel">
     <div class="panel-header-simple">
-      <h2 style="font-family: 'Playfair Display', serif !important; font-weight: 800 !important; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; letter-spacing: -0.03em !important;">Add Questions</h2>
+      <h2>Add Questions</h2>
       <p class="panel-description">Add new questions to existing or new skill categories</p>
     </div>
     <form action="{{ url_for('main.add_question_bank') }}" method="post" class="form question-form">
@@ -58,7 +58,7 @@
 
   <div class="panel question-list-panel">
     <div class="panel-header-simple">
-      <h2 style="font-family: 'Playfair Display', serif !important; font-weight: 800 !important; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; letter-spacing: -0.03em !important;">Question Bank</h2>
+      <h2>Question Bank</h2>
       <p class="panel-description">Browse and manage your question library</p>
     </div>
     {% if question_bank %}
@@ -83,8 +83,16 @@
                 <ul class="questions-list">
                   {% for question in questions %}
                     <li class="question-item-bank">
-                      <span class="question-number">{{ loop.index }}</span>
-                      <span class="question-text-bank">{{ question }}</span>
+                      <div class="question-item-content">
+                        <span class="question-number">{{ loop.index }}</span>
+                        <span class="question-text-bank">{{ question }}</span>
+                      </div>
+                      <form action="{{ url_for('main.delete_question_bank_question', skill=skill) }}" method="post" class="delete-form" onclick="return confirm('Delete this question?')">
+                        <input type="hidden" name="question" value="{{ question }}" />
+                        <button class="btn-delete btn-delete-question" type="submit" title="Delete this question">
+                          <span>Delete</span>
+                        </button>
+                      </form>
                     </li>
                   {% endfor %}
                 </ul>

@@ -130,6 +130,21 @@ def delete_question_bank_skill(skill: str):
     return redirect(url_for("main.question_bank"))
 
 
+@main_bp.route("/question-bank/<string:skill>/questions/delete", methods=["POST"])
+def delete_question_bank_question(skill: str):
+    question_text = request.form.get("question", "").strip()
+    if not question_text:
+        return redirect(url_for("main.question_bank"))
+    bank = load_question_bank()
+    if skill in bank:
+        questions = bank.get(skill, [])
+        if question_text in questions:
+            questions.remove(question_text)
+            bank[skill] = questions
+            save_question_bank(bank)
+    return redirect(url_for("main.question_bank"))
+
+
 @main_bp.route("/interviews", methods=["POST"])
 def create_interview():
     name = request.form.get("name", "").strip()
@@ -275,9 +290,26 @@ def update_question(interview_id: int, question_id: int):
     return jsonify({"status": "ok"})
 
 
-@main_bp.route("/api/interviews/<int:interview_id>/notes", methods=["POST"])
+@main_bp.route("/api/interviews/<int:interview_id>/notes", methods=["GET", "POST"])
 def add_note(interview_id: int):
     interview = _get_or_404(Interview, interview_id)
+    if request.method == "GET":
+        notes = Note.query.filter_by(interview_id=interview_id).order_by(Note.timestamp.desc()).all()
+        return jsonify(
+            {
+                "status": "ok",
+                "notes": [
+                    {
+                        "id": note.id,
+                        "skill": note.skill,
+                        "tag": note.tag,
+                        "text": note.text,
+                        "timestamp": note.timestamp.isoformat(),
+                    }
+                    for note in notes
+                ],
+            }
+        )
     if interview.status == "completed":
         return jsonify({"status": "locked"}), 400
     data = request.get_json(force=True)
@@ -310,6 +342,17 @@ def add_note(interview_id: int):
             },
         }
     )
+
+
+@main_bp.route("/api/interviews/<int:interview_id>/notes/<int:note_id>", methods=["DELETE"])
+def delete_note(interview_id: int, note_id: int):
+    interview = _get_or_404(Interview, interview_id)
+    if interview.status == "completed":
+        return jsonify({"status": "locked"}), 400
+    note = Note.query.filter_by(id=note_id, interview_id=interview_id).first_or_404()
+    db.session.delete(note)
+    db.session.commit()
+    return jsonify({"status": "ok"})
 
 
 @main_bp.route("/api/interviews/<int:interview_id>/scores", methods=["POST"])
