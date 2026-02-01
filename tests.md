@@ -97,6 +97,31 @@
 ### Edge
 - **TC-21c**, **TC-21d**, **TC-26a**
 
+### Automated Test Classification (by test name)
+| Test | Classification |
+| --- | --- |
+| test_dashboard_loads | Positive |
+| test_create_interview_missing_fields_redirects | Negative |
+| test_create_interview_duplicate_email | Negative |
+| test_summary_blocked_until_completed | Negative |
+| test_end_interview_and_generate_summary | Positive |
+| test_summary_shows_only_asked_questions | Positive |
+| test_update_question_marks_asked_and_note | Positive |
+| test_add_note_with_other_skill | Positive |
+| test_get_notes_returns_ordered_list | Positive |
+| test_delete_note_success | Positive |
+| test_delete_note_locked_when_completed | Negative |
+| test_update_score | Positive |
+| test_filters_by_role_and_recommendation | Positive |
+| test_completed_interview_shows_hire_status_pill | Positive |
+| test_completed_interview_without_recommendation_hides_status_pill | Negative |
+| test_completed_pagination_edge_page_out_of_range | Edge |
+| test_completed_pagination_invalid_page_defaults | Edge |
+| test_delete_question_bank_question | Positive |
+| test_delete_question_bank_question_missing_no_change | Negative |
+| test_generate_summary_returns_fallback_when_llm_disabled | Edge |
+| test_pdf_export_asked_questions_only | Positive |
+
 ## Dashboard & Interview Creation
 
 ### `test_dashboard_loads`
